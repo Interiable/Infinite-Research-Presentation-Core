@@ -20,6 +20,8 @@ class AgentState(TypedDict):
     
     # Knowledge Base
     # gathered_info: List[str] # Raw snippets
+    local_knowledge: str     # Found in local files
+    web_knowledge: str       # Found on the web
     shared_knowledge: str    # Synthesized summary/kb
     
     # Intermediate Artifacts

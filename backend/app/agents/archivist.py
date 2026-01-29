@@ -71,6 +71,7 @@ def archivist_node(state: AgentState):
         summary = f"Local LLM (Ollama) failed or not running. Raw scan result: {raw_data[:200]}..."
     
     return {
-        "shared_knowledge": f"\n\nLocal Archives Summary:\n{summary}",
+        "local_knowledge": summary,
+        "shared_knowledge": f"\n\nLocal Archives Summary:\n{summary}", # Keep appending for history
         "messages": [SystemMessage(content="Local Scanning Complete.")]
     }

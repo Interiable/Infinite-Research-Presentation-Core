@@ -35,14 +35,23 @@ def researcher_node(state: AgentState):
     
     # In a real version, we'd invoke the search tool. 
     # Here we simulate the LLM using its internal knowledge + (potential) grounding tool
+
+    # Context Injection: Pass Local Knowledge to the Deep Researcher
+    local_context = state.get('local_knowledge', '')
+    context_prompt = ""
+    if local_context:
+        context_prompt = f"\n\n**Internal Knowledge (Local Files):**\n{local_context}\n\n**Instruction:** Integrate this local knowledge. If the web contradicts it, note the conflict. If it supports it, strengthen the argument."
+
     messages = [
         SystemMessage(content=SYSTEM_PROMPT),
-        HumanMessage(content=f"Research this topic deeply: {topic}. Focus on recent developments (2024-2026).")
+        HumanMessage(content=f"Research this topic deeply: {topic}. Focus on recent developments (2024-2026).{context_prompt}")
     ]
     
     response = llm.invoke(messages)
     
     return {
-        "shared_knowledge": f"Web Research Summary:\n{response.content}",
+    return {
+        "web_knowledge": response.content,
+        "shared_knowledge": f"Web Research Summary:\n{response.content}", # Append
         "messages": [SystemMessage(content=f"Research Complete for: {topic}")]
     }
