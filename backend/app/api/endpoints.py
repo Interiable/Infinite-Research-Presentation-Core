@@ -44,6 +44,38 @@ async def stop_server():
     threading.Thread(target=shutdown).start()
     return {"status": "shutting_down", "message": "Server halting in 1 second..."}
 
+@router.post("/config/pick-folder")
+async def pick_folder():
+    """
+    Opens a native folder picker dialog on the server (user's machine).
+    Updates the LOCAL_RESEARCH_DIR environment variable.
+    """
+    try:
+        import tkinter as tk
+        from tkinter import filedialog
+        
+        # Create a hidden root window
+        root = tk.Tk()
+        root.withdraw() # Hide the main window
+        root.attributes('-topmost', True) # Bring to front
+        
+        # Open dialog
+        folder_path = filedialog.askdirectory(title="Select Research Folder")
+        root.destroy()
+        
+        if folder_path:
+            # Update Environment Variable dynamically
+            os.environ["LOCAL_RESEARCH_DIR"] = folder_path
+            # Also invoke a log message via websocket broadcast if possible? 
+            # (We don't have client_id here easily, so we just return it)
+            return {"status": "success", "path": folder_path}
+        else:
+            return {"status": "cancelled", "path": None}
+            
+    except Exception as e:
+        print(f"Error opening folder picker: {e}")
+        return {"status": "error", "message": str(e)}
+
 @router.post("/chat", response_model=ChatOutput)
 async def chat_endpoint(payload: ChatInput):
     """

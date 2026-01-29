@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Send, MessageSquare, Power } from 'lucide-react';
+import { Send, MessageSquare, Power, FolderOpen } from 'lucide-react';
 
 interface ChatProps {
     onSendMessage: (msg: string) => void;
@@ -14,6 +14,18 @@ export const ChatPanel: React.FC<ChatProps> = ({ onSendMessage, isConnected }) =
         if (input.trim()) {
             onSendMessage(input);
             setInput('');
+        }
+    };
+
+    const handlePickFolder = async () => {
+        try {
+            const res = await fetch('http://localhost:8000/api/config/pick-folder', { method: 'POST' });
+            const data = await res.json();
+            if (data.status === 'success') {
+                alert(`연구 폴더가 변경되었습니다:\n${data.path}`);
+            }
+        } catch (err) {
+            console.error("Folder pick failed", err);
         }
     };
 
@@ -37,6 +49,13 @@ export const ChatPanel: React.FC<ChatProps> = ({ onSendMessage, isConnected }) =
                     <span className="text-sm font-bold tracking-wider text-neon-blue">MISSION CONTROL</span>
                 </div>
                 <div className="flex items-center space-x-3">
+                    <button
+                        onClick={handlePickFolder}
+                        className="p-1 text-neon-blue hover:bg-neon-blue/10 rounded transition-colors"
+                        title="Select Research Folder"
+                    >
+                        <FolderOpen className="w-4 h-4" />
+                    </button>
                     <button
                         onClick={handleShutdown}
                         className="p-1 text-red-500 hover:text-red-400 hover:bg-red-500/10 rounded transition-colors"
