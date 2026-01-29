@@ -25,6 +25,15 @@ def run_share():
         # Check if npx is available
         subprocess.run(["npx", "--version"], stdout=subprocess.DEVNULL, check=True)
         
+        # Fetch Public IP for Tunnel Password
+        try:
+            import urllib.request
+            print("🔐 Fetching Tunnel Password (Public IP)...")
+            with urllib.request.urlopen('https://api.ipify.org') as response:
+                public_ip = response.read().decode('utf-8')
+        except Exception:
+            public_ip = "Could not fetch IP. Please search 'What is my IP' on this computer."
+
         # Start lt for port 5174
         # We use a subprocess and try to grep the URL if possible, or just let it print to stdout
         tunnel_process = subprocess.Popen(
@@ -42,9 +51,9 @@ def run_share():
                     if "your url is" in line.lower():
                         print("\n" + "="*60)
                         print(f"📱 MOBILE ACCESS LINK: {line.strip()}")
+                        print(f"🔑 TUNNEL PASSWORD:   {public_ip}")
                         print("="*60 + "\n")
-                        print("👉 Open this link on your Android phone to access Mission Control.")
-                        print("👉 If asked for a password (tunnel specific), it usually isn't required for localtunnel, but click 'Continue' if prompted.")
+                        print("👉 Open the link and enter the Password above if prompted.")
                         break
                 else:
                     if tunnel_process.poll() is not None:
