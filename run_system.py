@@ -31,8 +31,8 @@ def run_system():
     frontend_process = subprocess.Popen(
         ["npm", "run", "dev", "--", "--host"],
         cwd=os.path.join(os.getcwd(), "frontend"),
-        stdout=subprocess.DEVNULL, # Keep frontend noisy logs quiet? Maybe let them show.
-        stderr=subprocess.PIPE
+        stdout=None, # Let it print to console for debugging
+        stderr=None
     )
 
     print("✅ System Online!")

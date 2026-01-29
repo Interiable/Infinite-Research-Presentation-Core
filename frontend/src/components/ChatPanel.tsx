@@ -19,7 +19,7 @@ export const ChatPanel: React.FC<ChatProps> = ({ onSendMessage, isConnected }) =
 
     const handlePickFolder = async () => {
         try {
-            const res = await fetch('http://localhost:8000/api/config/pick-folder', { method: 'POST' });
+            const res = await fetch('/api/config/pick-folder', { method: 'POST' });
             const data = await res.json();
             if (data.status === 'success') {
                 alert(`연구 폴더가 변경되었습니다:\n${data.path}`);
@@ -32,7 +32,7 @@ export const ChatPanel: React.FC<ChatProps> = ({ onSendMessage, isConnected }) =
     const handleShutdown = async () => {
         if (confirm("System Shutdown: Are you sure you want to stop all AI Agents and close the Mission Control?")) {
             try {
-                await fetch('http://localhost:8000/api/stop', { method: 'POST' });
+                await fetch('/api/stop', { method: 'POST' });
                 alert("System Shutting Down...");
                 window.close();
             } catch (err) {

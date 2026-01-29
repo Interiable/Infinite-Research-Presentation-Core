@@ -5,7 +5,11 @@ import { SlidePreview } from './components/SlidePreview';
 
 function App() {
   // Connect to our Backend WebSocket
-  const { logs, currentSlideCode, sendMessage, isConnected } = useAgentWebSocket('ws://localhost:8000/api/ws');
+  // Connect to our Backend WebSocket dynamically
+  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+  const wsUrl = `${protocol}//${window.location.host}/api/ws`;
+
+  const { logs, currentSlideCode, sendMessage, isConnected } = useAgentWebSocket(wsUrl);
 
   return (
     <div className="flex h-screen w-screen bg-cyber-dark text-cyber-text overflow-hidden font-sans">

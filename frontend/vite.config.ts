@@ -8,16 +8,15 @@ export default defineConfig({
     port: 5174,
     strictPort: true,
     allowedHosts: true, // Allow all hosts (tunneling)
+    hmr: {
+      clientPort: 443, // Force client to use HTTPS port (Tunnel) instead of 5174
+    },
     proxy: {
       '/api': {
         target: 'http://localhost:8000',
         changeOrigin: true,
+        ws: true, // Enable WebSockets properly
       },
-      '/ws': {
-        target: 'ws://localhost:8000',
-        ws: true,
-        rewrite: (path) => path.replace(/^\/ws/, '')
-      }
     }
   }
 })
