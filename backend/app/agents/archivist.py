@@ -29,7 +29,9 @@ def scan_local_files(directory_input: str, query: str) -> str:
     # Split by comma and strip whitespace
     directories = [d.strip() for d in directory_input.split(',') if d.strip()]
     
-    found_content = []
+    supported_exts = ('.md', '.txt', '.py', '.js', '.ts', '.tsx', '.jsx', '.json', '.yaml', '.yml', '.html', '.css', '.java', '.c', '.cpp', '.h', '.go', '.rs')
+    
+    found_files = []
     
     for directory in directories:
         if not os.path.exists(directory):
@@ -38,30 +40,55 @@ def scan_local_files(directory_input: str, query: str) -> str:
             
         print(f"Scanning directory: {directory}")
         for root, _, files in os.walk(directory):
+            # Skip hidden folders like .git, node_modules, __pycache__
+            if any(part.startswith('.') or part in ['node_modules', 'venv', 'dist', 'build'] for part in root.split(os.sep)):
+                continue
+
             for file in files:
-                if file.endswith(('.md', '.txt', '.py', '.js', '.ts', '.tsx')):
-                    # Added code extensions for broader context
+                if file.endswith(supported_exts):
                     try:
                         path = os.path.join(root, file)
-                        # Simple text read for now - max 2000 chars per file
                         with open(path, 'r', encoding='utf-8', errors='ignore') as f:
                             content = f.read()
-                            if len(content) > 2000: content = content[:2000] + "..."
-                            found_content.append(f"File: {file} (Path: {path})\nContent: {content}")
+                            
+                            # relevance score: crude count of query terms
+                            score = 0
+                            if query:
+                                score = content.lower().count(query.lower())
+                                # boost for filename match
+                                if query.lower() in file.lower():
+                                    score += 10
+                            else:
+                                score = 1 # No query -> treat all as equal
+                                
+                            found_files.append({
+                                "path": path,
+                                "name": file,
+                                "content": content,
+                                "score": score
+                            })
                     except Exception as e:
                         print(f"Error reading {file}: {e}")
-                    
-    if not found_content:
+                        
+    if not found_files:
         return f"No relevant local files found in paths: {directory_input}"
         
-    # Heuristic to return most relevant or top N files
-    # For now, we return up to 5 files to fit context
-    return "\n---\n".join(found_content[:5])
-                    
-    if not found_content:
-        return "No relevant local files found."
+    # Sort by relevance (descending)
+    found_files.sort(key=lambda x: x['score'], reverse=True)
+    
+    # Take top 15 relevant files
+    top_files = found_files[:15]
+    
+    result_text = []
+    for f in top_files:
+        # Truncate large files to save tokens, preserving head and tail if really big
+        content_preview = f['content']
+        if len(content_preview) > 3000:
+            content_preview = content_preview[:1500] + "\n...[SNIPPED]...\n" + content_preview[-1000:]
+            
+        result_text.append(f"File: {f['name']} (Path: {f['path']})\nContent:\n{content_preview}")
         
-    return "\n---\n".join(found_content[:5]) # Limit to top 5 for context window
+    return "\n" + "="*40 + "\n".join(result_text)
 
 def archivist_node(state: AgentState):
     """
