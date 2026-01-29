@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Send, MessageSquare, Power, FolderOpen } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Send, MessageSquare, Power, FolderOpen, Database } from 'lucide-react';
 
 interface ChatProps {
     onSendMessage: (msg: string) => void;
@@ -8,6 +8,22 @@ interface ChatProps {
 
 export const ChatPanel: React.FC<ChatProps> = ({ onSendMessage, isConnected }) => {
     const [input, setInput] = useState('');
+    const [folders, setFolders] = useState<string[]>([]);
+    const [showFolders, setShowFolders] = useState(false);
+
+    useEffect(() => {
+        fetchFolders();
+    }, []);
+
+    const fetchFolders = async () => {
+        try {
+            const res = await fetch('/api/config/folders');
+            const data = await res.json();
+            if (data.folders) setFolders(data.folders);
+        } catch (err) {
+            console.error("Failed to fetch folders", err);
+        }
+    };
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -22,7 +38,9 @@ export const ChatPanel: React.FC<ChatProps> = ({ onSendMessage, isConnected }) =
             const res = await fetch('/api/config/pick-folder', { method: 'POST' });
             const data = await res.json();
             if (data.status === 'success') {
-                alert(`연구 폴더가 변경되었습니다:\n${data.path}`);
+                // Refresh list
+                await fetchFolders();
+                alert(`폴더가 추가되었습니다.\n현재 연결된 폴더 수: ${data.path.split(',').length}개`);
             }
         } catch (err) {
             console.error("Folder pick failed", err);
@@ -50,9 +68,16 @@ export const ChatPanel: React.FC<ChatProps> = ({ onSendMessage, isConnected }) =
                 </div>
                 <div className="flex items-center space-x-3">
                     <button
+                        onClick={() => setShowFolders(!showFolders)}
+                        className={`p-1 rounded transition-colors ${showFolders ? 'bg-neon-blue/20 text-neon-blue' : 'text-cyber-muted hover:text-neon-blue'}`}
+                        title="View Data Sources"
+                    >
+                        <Database className="w-4 h-4" />
+                    </button>
+                    <button
                         onClick={handlePickFolder}
                         className="p-1 text-neon-blue hover:bg-neon-blue/10 rounded transition-colors"
-                        title="Select Research Folder"
+                        title="Add Research Folder"
                     >
                         <FolderOpen className="w-4 h-4" />
                     </button>
@@ -69,11 +94,32 @@ export const ChatPanel: React.FC<ChatProps> = ({ onSendMessage, isConnected }) =
 
             <div className="flex-1 p-4 overflow-y-auto">
                 <div className="bg-cyber-dark/50 p-4 rounded-lg border border-cyber-border mb-4">
-                    <p className="text-cyber-text text-sm">
+                    <p className="text-cyber-text text-sm mb-2">
                         박사님, 환영합니다. 연구 지시를 기다리고 있습니다.
                         <br />
                         현재 상태: <span className="text-neon-pink">대기 중 (Idle)</span>
                     </p>
+
+                    {/* Folder List UI */}
+                    {showFolders && (
+                        <div className="mt-3 p-3 bg-black/40 rounded border border-cyber-border">
+                            <h4 className="text-xs font-bold text-neon-green mb-2 flex items-center">
+                                <Database className="w-3 h-3 mr-1" /> LINKED KNOWLEDGE BASES ({folders.length})
+                            </h4>
+                            {folders.length > 0 ? (
+                                <ul className="space-y-1">
+                                    {folders.map((path, idx) => (
+                                        <li key={idx} className="text-xs text-cyber-muted break-all flex items-start">
+                                            <span className="mr-2 text-cyber-border">•</span>
+                                            {path}
+                                        </li>
+                                    ))}
+                                </ul>
+                            ) : (
+                                <p className="text-xs text-cyber-muted italic">No local folders linked yet.</p>
+                            )}
+                        </div>
+                    )}
                 </div>
             </div>
 

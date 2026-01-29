@@ -87,6 +87,15 @@ async def pick_folder():
         print(f"Error opening folder picker: {e}")
         return {"status": "error", "message": str(e)}
 
+@router.get("/config/folders")
+async def get_folders():
+    """
+    Returns the current list of research folders.
+    """
+    raw = os.environ.get("LOCAL_RESEARCH_DIR", "")
+    folders = [f.strip() for f in raw.split(',') if f.strip()]
+    return {"folders": folders}
+
 @router.post("/chat", response_model=ChatOutput)
 async def chat_endpoint(payload: ChatInput):
     """
