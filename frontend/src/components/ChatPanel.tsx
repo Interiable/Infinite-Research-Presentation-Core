@@ -51,9 +51,9 @@ export const ChatPanel: React.FC<ChatProps> = ({ onSendMessage, isConnected }) =
             <div className="flex-1 p-4 overflow-y-auto">
                 <div className="bg-cyber-dark/50 p-4 rounded-lg border border-cyber-border mb-4">
                     <p className="text-cyber-text text-sm">
-                        Hello Director. I am ready for your instructions.
+                        박사님, 환영합니다. 연구 지시를 기다리고 있습니다.
                         <br />
-                        Current Target: <span className="text-neon-pink">Idle</span>
+                        현재 상태: <span className="text-neon-pink">대기 중 (Idle)</span>
                     </p>
                 </div>
             </div>

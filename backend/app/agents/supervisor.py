@@ -31,7 +31,7 @@ def supervisor_node(state: AgentState):
     
     # If we are just starting or have new user input
     if not state.get('next'):
-        return {"next": "RESEARCHER", "messages": [SystemMessage(content="Starting Research Phase.")]}
+        return {"next": "RESEARCHER", "messages": [SystemMessage(content="연구 단계를 시작합니다.")]}
     
     # 2. Content Critique Gate (Phase 2 -> 3)
     # If the researcher/archivist has finished and we have a draft storyboard, we critique it.
@@ -46,14 +46,14 @@ def supervisor_node(state: AgentState):
             return {
                 "next": "ARCHITECT", 
                 "storyboard_critique": critique_response.content,
-                "messages": [SystemMessage(content="Storyboard Approved. Proceeding to Design.")]
+                "messages": [SystemMessage(content="스토리보드가 승인되었습니다. 디자인 작업을 시작합니다.")]
             }
         else:
             # Send back for more research or re-synthesis
             return {
                 "next": "RESEARCHER", 
                 "storyboard_critique": critique_response.content,
-                "messages": [SystemMessage(content=f"Storyboard Rejected: {critique_response.content}")]
+                "messages": [SystemMessage(content=f"스토리보드 반려됨: {critique_response.content}")]
             }
 
     # 3. Design Critique Gate (Phase 3 -> 4 -> Loop)
@@ -67,13 +67,13 @@ def supervisor_node(state: AgentState):
             return {
                 "next": "END", # Or wait for user
                 "critique_feedback": critique_response.content,
-                "messages": [SystemMessage(content="Design Approved. Version Saved.")]
+                "messages": [SystemMessage(content="디자인 승인 완료. 버전이 저장되었습니다.")]
             }
         else:
             return {
                 "next": "ARCHITECT", # Redo design
                 "critique_feedback": critique_response.content,
-                "messages": [SystemMessage(content=f"Design Rejected: {critique_response.content}")]
+                "messages": [SystemMessage(content=f"디자인 반려됨: {critique_response.content}")]
             }
 
     # Default Fallback for now
