@@ -28,7 +28,7 @@ def run_share():
         # Start lt for port 5174
         # We use a subprocess and try to grep the URL if possible, or just let it print to stdout
         tunnel_process = subprocess.Popen(
-            ["npx", "localtunnel", "--port", "5174"],
+            ["npx", "-y", "localtunnel", "--port", "5174"],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True
