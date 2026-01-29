@@ -33,11 +33,15 @@ def supervisor_node(state: AgentState):
     if not state.get('next'):
         return {"next": "RESEARCHER", "messages": [SystemMessage(content="연구 단계를 시작합니다.")]}
     
+    # helper to get time
+    from datetime import datetime
+    now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
     # 2. Content Critique Gate (Phase 2 -> 3)
     # If the researcher/archivist has finished and we have a draft storyboard, we critique it.
     if current_step == "STORYBOARD_REVIEW":
         critique_response = llm.invoke([
-            SystemMessage(content=SUPERVISOR_SYSTEM_PROMPT),
+            SystemMessage(content=SUPERVISOR_SYSTEM_PROMPT.format(current_time=now_str)),
             HumanMessage(content=CONTENT_CRITIQUE_PROMPT.format(topic=state.get('research_topic', 'Unknown')))
         ])
         
@@ -59,7 +63,7 @@ def supervisor_node(state: AgentState):
     # 3. Design Critique Gate (Phase 3 -> 4 -> Loop)
     if current_step == "DESIGN_REVIEW":
         critique_response = llm.invoke([
-            SystemMessage(content=SUPERVISOR_SYSTEM_PROMPT),
+            SystemMessage(content=SUPERVISOR_SYSTEM_PROMPT.format(current_time=now_str)),
             HumanMessage(content=DESIGN_CRITIQUE_PROMPT.format(version=state.get('current_version', 1)))
         ])
         
