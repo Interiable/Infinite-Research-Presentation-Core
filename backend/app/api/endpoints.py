@@ -129,36 +129,43 @@ async def websocket_endpoint(websocket: WebSocket, client_id: str):
             
             config = {"configurable": {"thread_id": client_id}}
             
-            # Streaming events from the graph
-            async for event in graph.astream_events(
-                {"messages": [HumanMessage(content=data)]},
-                config=config,
-                version="v1"
-            ):
-                kind = event["event"]
-                
-                # Filter interesting events and send logs
-                if kind == "on_chat_model_stream":
-                    # Stream tokens if needed (too verbose for now)
-                    pass
-                elif kind == "on_chain_end":
-                    # Check for updates in state
-                    data = event['data'].get('output')
-                    if data and isinstance(data, dict):
-                        # Detect if artifacts like slides were generated
-                        if 'slide_code' in data:
-                            slide_payload = list(data['slide_code'].values())[0] # Get first slide
-                            await manager.broadcast(json.dumps({
-                                "type": "slide_update", 
-                                "code": slide_payload
-                            }), client_id)
-                        
-                        # Log the next step
-                        if 'next' in data:
-                            await manager.broadcast(json.dumps({
-                                "type": "log", 
-                                "content": f"Agent Switching to: {data['next']}"
-                            }), client_id)
+            try:
+                # Streaming events from the graph
+                async for event in graph.astream_events(
+                    {"messages": [HumanMessage(content=data)]},
+                    config=config,
+                    version="v1"
+                ):
+                    kind = event["event"]
+                    
+                    # Filter interesting events and send logs
+                    if kind == "on_chat_model_stream":
+                        # Stream tokens if needed (too verbose for now)
+                        pass
+                    elif kind == "on_chain_end":
+                        # Check for updates in state
+                        data = event['data'].get('output')
+                        if data and isinstance(data, dict):
+                            # Detect if artifacts like slides were generated
+                            if 'slide_code' in data:
+                                slide_payload = list(data['slide_code'].values())[0] # Get first slide
+                                await manager.broadcast(json.dumps({
+                                    "type": "slide_update", 
+                                    "code": slide_payload
+                                }), client_id)
+                            
+                            # Log the next step
+                            if 'next' in data:
+                                await manager.broadcast(json.dumps({
+                                    "type": "log", 
+                                    "content": f"Agent Switching to: {data['next']}"
+                                }), client_id)
+            except Exception as e:
+                import traceback
+                error_msg = f"Graph Execution Error: {str(e)}\n{traceback.format_exc()}"
+                print(error_msg)
+                await manager.broadcast(json.dumps({"type": "error", "content": str(e)}), client_id)
+                await manager.broadcast(json.dumps({"type": "log", "content": "⚠️ System Error. Check console."}), client_id)
 
     except WebSocketDisconnect:
         manager.disconnect(client_id)
