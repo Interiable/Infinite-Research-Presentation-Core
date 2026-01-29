@@ -18,30 +18,45 @@ You have access to the user's private documents.
 Summarize what you find in the local context.
 """
 
-def scan_local_files(directory: str, query: str) -> str:
+def scan_local_files(directory_input: str, query: str) -> str:
     """
-    Recursively scans valid files in the directory.
-    Simple grep-like logic + LLM Summary (Simulated).
+    Recursively scans valid files in the provided directory(ies).
+    Supports multiple directories separated by commas.
     """
-    if not directory or not os.path.exists(directory):
-        return "No local directory configured or directory does not exist."
+    if not directory_input:
+        return "No local directory configured."
+    
+    # Split by comma and strip whitespace
+    directories = [d.strip() for d in directory_input.split(',') if d.strip()]
     
     found_content = []
     
-    for root, _, files in os.walk(directory):
-        for file in files:
-            if file.endswith(('.md', '.txt', '.pdf', '.docx')):
-                # In a real impl, we'd read PDF/DOCX. Here we stick to text-readable for the scaffold.
-                try:
-                    path = os.path.join(root, file)
-                    # Simple text read for now
-                    if file.endswith(('.md', '.txt')):
-                        with open(path, 'r', encoding='utf-8') as f:
+    for directory in directories:
+        if not os.path.exists(directory):
+            print(f"Skipping non-existent directory: {directory}")
+            continue
+            
+        print(f"Scanning directory: {directory}")
+        for root, _, files in os.walk(directory):
+            for file in files:
+                if file.endswith(('.md', '.txt', '.py', '.js', '.ts', '.tsx')):
+                    # Added code extensions for broader context
+                    try:
+                        path = os.path.join(root, file)
+                        # Simple text read for now - max 2000 chars per file
+                        with open(path, 'r', encoding='utf-8', errors='ignore') as f:
                             content = f.read()
-                            if len(content) > 1000: content = content[:1000] + "..."
-                            found_content.append(f"File: {file}\nContent: {content}")
-                except Exception as e:
-                    print(f"Error reading {file}: {e}")
+                            if len(content) > 2000: content = content[:2000] + "..."
+                            found_content.append(f"File: {file} (Path: {path})\nContent: {content}")
+                    except Exception as e:
+                        print(f"Error reading {file}: {e}")
+                    
+    if not found_content:
+        return f"No relevant local files found in paths: {directory_input}"
+        
+    # Heuristic to return most relevant or top N files
+    # For now, we return up to 5 files to fit context
+    return "\n---\n".join(found_content[:5])
                     
     if not found_content:
         return "No relevant local files found."

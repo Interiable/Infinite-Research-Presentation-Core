@@ -64,11 +64,22 @@ async def pick_folder():
         root.destroy()
         
         if folder_path:
-            # Update Environment Variable dynamically
-            os.environ["LOCAL_RESEARCH_DIR"] = folder_path
+            # Update Environment Variable dynamically (Append logic)
+            current_paths = os.environ.get("LOCAL_RESEARCH_DIR", "")
+            if current_paths:
+                # Avoid duplicates
+                if folder_path not in current_paths.split(','):
+                    new_paths = f"{current_paths},{folder_path}"
+                else:
+                    new_paths = current_paths
+            else:
+                new_paths = folder_path
+            
+            os.environ["LOCAL_RESEARCH_DIR"] = new_paths
+            
             # Also invoke a log message via websocket broadcast if possible? 
             # (We don't have client_id here easily, so we just return it)
-            return {"status": "success", "path": folder_path}
+            return {"status": "success", "path": new_paths}
         else:
             return {"status": "cancelled", "path": None}
             
