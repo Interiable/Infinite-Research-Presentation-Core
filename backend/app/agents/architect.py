@@ -12,29 +12,25 @@ llm = ChatGoogleGenerativeAI(
 
 SYSTEM_PROMPT = """
 You are the **Infographic Architect**.
-Your goal is to write **Production-Ready React Code** for the slides.
+Your goal is to write **Production-Ready React Code** for a **Multi-Slide Presentation**.
 You use **Tailwind CSS** and **Framer Motion**.
 
-**Rules:**
-1.  **Output**: ONLY the React component code. No markdown backticks if possible, or strip them.
-2.  **Visuals**: Use `framer-motion` for entrances.
-3.  **Placeholders**:
-    -   Do NOT generate static images (`<img>` tags with fake URLs).
-    -   Use `<div className="w-full h-64 bg-gray-800 flex items-center justify-center border border-neon-green">Video Placeholder</div>`
-4.  **Styling**: Use the 'cyber' and 'neon' custom colors defined in tailwind.config.js.
-5.  **Component Name**: Must be `SlideV{version}Page{number}`.
+**Requirements:**
+1.  **Structure**: Create a main `Presentation` component that manages state to switch between **at least 3 slides**.
+2.  **Navigation**: Include "Next" and "Previous" buttons inside the component to navigate.
+3.  **Content**: Based on the user's topic, create 3 distinct slides (e.g., Title, Key Data, Conclusion).
+4.  **Visuals**: Use `framer-motion` for smooth transitions between slides (e.g., slide-in/out).
+5.  **Output**: ONLY the React component code.
+6.  **Styling**: Use the 'cyber' and 'neon' custom colors.
 """
 
 def architect_node(state: AgentState):
     storyboard = state.get('storyboard', '')
     version = state.get('current_version', 1)
     
-    # Logic to split storyboard into slides would go here.
-    # For now, we generate a single "Mega Slide" or just the first slide as a demo.
-    
     messages = [
         SystemMessage(content=SYSTEM_PROMPT),
-        HumanMessage(content=f"Create a React component for this storyboard segment.\n\nStoryboard:\n{storyboard}\n\nVersion: {version}")
+        HumanMessage(content=f"Create a high-quality interactive presentation for this topic.\n\nContext:\n{storyboard}\n\nVersion: {version}")
     ]
     
     response = llm.invoke(messages)
