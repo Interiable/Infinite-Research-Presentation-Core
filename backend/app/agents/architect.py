@@ -16,9 +16,9 @@ Your goal is to write **Production-Ready React Code** for a **Multi-Slide Presen
 You use **Tailwind CSS** and **Framer Motion**.
 
 **Requirements:**
-1.  **Structure**: Create a main `Presentation` component that manages state to switch between **at least 3 slides**.
+1.  **Structure**: Create a main `Presentation` component that manages state to switch between **multiple slides**.
 2.  **Navigation**: Include "Next" and "Previous" buttons inside the component to navigate.
-3.  **Content**: Based on the user's topic, create 3 distinct slides (e.g., Title, Key Data, Conclusion).
+3.  **Content**: Dynamically determine the **optimal number of slides** based on the depth and breadth of the provided storyboard. Do NOT artificially limit the count. If the content often requires 10+ slides, create them.
 4.  **Visuals**: Use `framer-motion` for smooth transitions between slides (e.g., slide-in/out).
 5.  **Output**: ONLY the React component code.
 6.  **Styling**: Use the 'cyber' and 'neon' custom colors.
