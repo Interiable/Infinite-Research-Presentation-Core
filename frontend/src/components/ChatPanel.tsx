@@ -125,16 +125,21 @@ export const ChatPanel: React.FC<ChatProps> = ({ onSendMessage, isConnected }) =
 
             <form onSubmit={handleSubmit} className="p-4 bg-cyber-dark border-t border-cyber-border">
                 <div className="relative">
-                    <input
-                        type="text"
+                    <textarea
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
-                        placeholder="Type directive..."
-                        className="w-full bg-cyber-panel border border-cyber-border rounded-md py-3 pl-4 pr-12 text-sm text-white focus:outline-none focus:border-neon-blue transition-colors"
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter' && !e.shiftKey) {
+                                e.preventDefault();
+                                handleSubmit(e);
+                            }
+                        }}
+                        placeholder="Type directive... (Shift+Enter for new line)"
+                        className="w-full h-24 bg-cyber-panel border border-cyber-border rounded-md py-3 pl-4 pr-12 text-sm text-white focus:outline-none focus:border-neon-blue transition-colors resize-none"
                     />
                     <button
                         type="submit"
-                        className="absolute right-2 top-2 p-1 text-cyber-muted hover:text-neon-blue transition-colors"
+                        className="absolute right-2 bottom-2 p-1 text-cyber-muted hover:text-neon-blue transition-colors"
                     >
                         <Send className="w-5 h-5" />
                     </button>
