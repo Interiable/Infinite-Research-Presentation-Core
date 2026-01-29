@@ -11,8 +11,12 @@ llm = ChatGoogleGenerativeAI(
     model="gemini-1.5-flash", 
     temperature=0.0, 
     google_api_key=os.getenv("GOOGLE_API_KEY"),
-    # In a real implementation, we would enable the 'google_search_retrieval' tool here
-    # tools=[GoogleSearchRetrieval(dynamic_retrieval_config=...)] 
+    # Enable Google Search Grounding
+    # tools=[GoogleSearchRetrieval] # Requires updated langchain library support
+    # For now, we use the `google_search` keyword in the tool binding if available, 
+    # or rely on the model's native ability if configured.
+    # We will simulate the "Deep Research" behavior effectively.
+    model_kwargs={"tools": [{"google_search": {}}]} # Native grounding trigger for some versions
 )
 
 SYSTEM_PROMPT = """

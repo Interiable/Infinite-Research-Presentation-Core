@@ -2,6 +2,10 @@ from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from typing import Dict, List
 import json
 import asyncio
+import os
+import signal
+import threading
+import time
 
 from app.api.schemas import ChatInput, ChatOutput
 from app.core.graph import graph
@@ -26,6 +30,19 @@ class ConnectionManager:
             await self.active_connections[client_id].send_text(message)
 
 manager = ConnectionManager()
+
+
+@router.post("/stop")
+async def stop_server():
+    """
+    Gracefully shuts down the Backend Server.
+    """
+    def shutdown():
+        time.sleep(1) # Give time for response to be sent
+        os.kill(os.getpid(), signal.SIGTERM)
+
+    threading.Thread(target=shutdown).start()
+    return {"status": "shutting_down", "message": "Server halting in 1 second..."}
 
 @router.post("/chat", response_model=ChatOutput)
 async def chat_endpoint(payload: ChatInput):
