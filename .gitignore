@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.env
+.venv
+
+# Node
+node_modules/
+dist/
+build/
+.DS_Store
+
+# Logs
+workspace/logs
+*.log
+
+# Workspace Output (optional, usually we want to keep source but maybe not generated binaries)
+# workspace/output
