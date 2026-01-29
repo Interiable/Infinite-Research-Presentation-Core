@@ -50,7 +50,6 @@ def researcher_node(state: AgentState):
     response = llm.invoke(messages)
     
     return {
-    return {
         "web_knowledge": response.content,
         "shared_knowledge": f"Web Research Summary:\n{response.content}", # Append
         "messages": [SystemMessage(content=f"Research Complete for: {topic}")]
