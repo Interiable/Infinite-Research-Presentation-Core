@@ -5,18 +5,19 @@ from langgraph.graph import END
 
 from app.core.state import AgentState
 from app.agents.prompts import SUPERVISOR_SYSTEM_PROMPT, CONTENT_CRITIQUE_PROMPT, DESIGN_CRITIQUE_PROMPT
+from app.utils import RobustGemini
 
 # --- TIERED MODEL STRATEGY ---
-# 1. Pro Model: For High-Level Planning & Critique
-llm_pro = ChatGoogleGenerativeAI(
-    model="gemini-2.0-flash-exp", 
-    temperature=0.2, 
-    google_api_key=os.getenv("GOOGLE_API_KEY")
+# 1. Pro Model (Robust): Checks Quota, Falls back to Flash
+llm_pro = RobustGemini(
+    pro_model_name="gemini-2.0-pro-exp-02-05", 
+    flash_model_name="gemini-2.0-flash-exp",
+    temperature=0.2
 )
 
-# 2. Flash Model: For repetitive tasks or simple routing (if needed)
+# 2. Flash Model: For repetitive tasks or simple routing
 llm_flash = ChatGoogleGenerativeAI(
-    model="gemini-3-flash-preview", 
+    model="gemini-2.0-flash-exp", 
     temperature=0.0, 
     google_api_key=os.getenv("GOOGLE_API_KEY")
 )

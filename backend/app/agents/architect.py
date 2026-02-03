@@ -3,18 +3,19 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.messages import SystemMessage, HumanMessage
 
 from app.core.state import AgentState
+from app.utils import RobustGemini
 
 # --- TIERED MODEL STRATEGY ---
-# 1. Pro Model: For Complex Coding & Design
-llm_pro = ChatGoogleGenerativeAI(
-    model="gemini-2.0-flash-exp", 
-    temperature=0.0,
-    google_api_key=os.getenv("GOOGLE_API_KEY")
+# 1. Pro Model (Robust): For Complex Coding & Design
+llm_pro = RobustGemini(
+    pro_model_name="gemini-2.0-pro-exp-02-05", 
+    flash_model_name="gemini-2.0-flash-exp",
+    temperature=0.0
 )
 
 # 2. Flash Model: For Syntax Fixing & Simple Retries
 llm_flash = ChatGoogleGenerativeAI(
-    model="gemini-3-flash-preview", 
+    model="gemini-2.0-flash-exp", 
     temperature=0.0,
     google_api_key=os.getenv("GOOGLE_API_KEY")
 )

@@ -4,12 +4,13 @@ import json
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.messages import SystemMessage, HumanMessage
 from app.core.state import AgentState
+from app.utils import RobustGemini
 
-# Using Flash model to avoid Quota limits
-llm_planner = ChatGoogleGenerativeAI(
-    model="gemini-2.0-flash-exp", 
-    temperature=0.3, 
-    google_api_key=os.getenv("GOOGLE_API_KEY")
+# Using Robust Model for Planning (Critical Step)
+llm_planner = RobustGemini(
+    pro_model_name="gemini-2.0-pro-exp-02-05", 
+    flash_model_name="gemini-2.0-flash-exp",
+    temperature=0.3
 )
 
 PLANNER_SYSTEM_PROMPT = """
