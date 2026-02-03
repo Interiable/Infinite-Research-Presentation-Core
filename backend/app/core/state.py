@@ -39,3 +39,8 @@ class AgentState(TypedDict):
     # State Metadata
     iteration_count: int
     loop_active: bool
+    research_mode: Optional[str] # 'deep' or 'refine'
+    
+    # Structured Planning
+    plan: List[Dict[str, Any]] # List of PlanSteps
+    current_step_index: int    # Pointer to current step

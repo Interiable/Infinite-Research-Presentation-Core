@@ -3,117 +3,64 @@ from langchain_ollama import ChatOllama
 from langchain_core.messages import SystemMessage, HumanMessage
 
 from app.core.state import AgentState
+from app.core.rag import VectorStoreManager
 
 # Qwen 3 (32B) via Ollama
-# Ensure user has run: `ollama run qwen3:32b`
 llm = ChatOllama(
-    model="qwen3:32b", # Using the requested model name
+    model="qwen3:32b", 
     temperature=0.1
 )
 
 SYSTEM_PROMPT = """
 You are the **Local Archivist**.
 Your job is to read local files and extract relevant information for the project.
-You have access to the user's private documents.
+You have access to the user's private documents via a Semantic Search Engine (RAG).
 Summarize what you find in the local context.
 """
 
-def scan_local_files(directory_input: str, query: str) -> str:
-    """
-    Recursively scans valid files in the provided directory(ies).
-    Supports multiple directories separated by commas.
-    """
-    if not directory_input:
-        return "No local directory configured."
-    
-    # Split by comma and strip whitespace
-    directories = [d.strip() for d in directory_input.split(',') if d.strip()]
-    
-    supported_exts = ('.md', '.txt', '.py', '.js', '.ts', '.tsx', '.jsx', '.json', '.yaml', '.yml', '.html', '.css', '.java', '.c', '.cpp', '.h', '.go', '.rs')
-    
-    found_files = []
-    
-    for directory in directories:
-        if not os.path.exists(directory):
-            print(f"Skipping non-existent directory: {directory}")
-            continue
-            
-        print(f"Scanning directory: {directory}")
-        for root, _, files in os.walk(directory):
-            # Skip hidden folders like .git, node_modules, __pycache__
-            if any(part.startswith('.') or part in ['node_modules', 'venv', 'dist', 'build'] for part in root.split(os.sep)):
-                continue
-
-            for file in files:
-                if file.endswith(supported_exts):
-                    try:
-                        path = os.path.join(root, file)
-                        with open(path, 'r', encoding='utf-8', errors='ignore') as f:
-                            content = f.read()
-                            
-                            # relevance score: crude count of query terms
-                            score = 0
-                            if query:
-                                score = content.lower().count(query.lower())
-                                # boost for filename match
-                                if query.lower() in file.lower():
-                                    score += 10
-                            else:
-                                score = 1 # No query -> treat all as equal
-                                
-                            found_files.append({
-                                "path": path,
-                                "name": file,
-                                "content": content,
-                                "score": score
-                            })
-                    except Exception as e:
-                        print(f"Error reading {file}: {e}")
-                        
-    if not found_files:
-        return f"No relevant local files found in paths: {directory_input}"
-        
-    # Sort by relevance (descending)
-    found_files.sort(key=lambda x: x['score'], reverse=True)
-    
-    # Take top 15 relevant files
-    top_files = found_files[:15]
-    
-    result_text = []
-    for f in top_files:
-        # Truncate large files to save tokens, preserving head and tail if really big
-        content_preview = f['content']
-        if len(content_preview) > 3000:
-            content_preview = content_preview[:1500] + "\n...[SNIPPED]...\n" + content_preview[-1000:]
-            
-        result_text.append(f"File: {f['name']} (Path: {f['path']})\nContent:\n{content_preview}")
-        
-    return "\n" + "="*40 + "\n".join(result_text)
+# Initialize RAG Manager (Persistent)
+rag_manager = VectorStoreManager()
 
 def archivist_node(state: AgentState):
     """
-    Scans local research directory.
+    Scans local research directory using Vector Search (RAG).
     """
-    topic = state.get('research_topic', '')
+    topic = state.get('research_topic', 'General Project Context')
     local_dir = os.getenv("LOCAL_RESEARCH_DIR", "/workspace/data")
     
-    raw_data = scan_local_files(local_dir, topic)
+    print(f"📂 Archivist: Checking directory {local_dir}...")
     
-    # Synthesize with Qwen 3
+    # 1. Ingest Data (MVP: Simple check or reliable re-ingest)
+    # For a robust production app, we would check hashes.
+    # For now, we attempt to ingest. expected overhead is acceptable for small local sets.
+    # Optimization: We could add a flag in state to skip ingestion if done once.
+    if local_dir and os.path.exists(local_dir):
+        rag_log = rag_manager.ingest_directory(local_dir)
+        print(rag_log)
+    else:
+        return {
+            "local_knowledge": "No local research directory configured.",
+            "messages": [SystemMessage(content="Skipping Local Scan: Directory not found.")]
+        }
+
+    # 2. Semantic Search & Holistic Overview
+    file_overview = rag_manager.get_file_overviews()
+    search_results = rag_manager.similarity_search(topic, k=8)
+    
+    # 3. Synthesize with Qwen 3
     messages = [
         SystemMessage(content=SYSTEM_PROMPT),
-        HumanMessage(content=f"Context from local files:\n{raw_data}\n\nTask: Summarize this considering the topic '{topic}'.")
+        HumanMessage(content=f"Research Topic: {topic}\n\n**Holistic File Overview (What we have):**\n{file_overview}\n\n**Retrieved Deep Context (Focused):**\n{search_results}\n\n**Task:** Synthesize these findings to answer the topic. Use the File Overview to understand the scope, and Deep Context for details.")
     ]
     
-    # We try/except because Ollama might not be running in the user's environment yet
     try:
         response = llm.invoke(messages)
         summary = response.content
     except Exception as e:
-        summary = f"Local LLM (Ollama) failed or not running. Raw scan result: {raw_data[:200]}..."
+        summary = f"Local LLM (Ollama) failed. Raw Context:\n{search_results[:500]}..."
     
     return {
         "local_knowledge": summary,
-        "shared_knowledge": f"\n\nLocal Archives Summary:\n{summary}", # Keep appending for history
-        "messages": [SystemMessage(content="Local Scanning Complete.")]
+        "shared_knowledge": f"\n\nLocal RAG Archives:\n{summary}", 
+        "messages": [SystemMessage(content=f"Local Analysis Complete (RAG). Found {len(search_results)} context chunks.")]
     }

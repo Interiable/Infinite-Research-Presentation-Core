@@ -13,23 +13,24 @@ type SlideUpdate = {
 
 type WebSocketMessage = LogMessage | SlideUpdate;
 
-export function useAgentWebSocket(url: string) {
+export function useAgentWebSocket(url: string, threadId: string) {
     const ws = useRef<WebSocket | null>(null);
     const [logs, setLogs] = useState<string[]>([]);
     const [currentSlideCode, setCurrentSlideCode] = useState<string | null>(null);
     const [isConnected, setIsConnected] = useState(false);
 
     useEffect(() => {
-        // Generate a random client ID
-        const clientId = Math.random().toString(36).substring(7);
-        const wsUrl = `${url}/${clientId}`;
+        if (!threadId) return;
+
+        const wsUrl = `${url}/${threadId}`;
+        console.log(`Connecting to session: ${threadId}`);
 
         ws.current = new WebSocket(wsUrl);
 
         ws.current.onopen = () => {
             console.log('Connected to Agent Stream');
             setIsConnected(true);
-            setLogs((prev) => [...prev, '[System] Connected to Mission Control']);
+            setLogs((prev) => [...prev, `[System] Connected to Session: ${threadId}`]);
         };
 
         ws.current.onmessage = (event) => {
@@ -55,14 +56,24 @@ export function useAgentWebSocket(url: string) {
         return () => {
             ws.current?.close();
         };
-    }, [url]);
+    }, [url, threadId]);
 
     const sendMessage = (text: string) => {
         if (ws.current && isConnected) {
-            ws.current.send(text);
+            // Send as JSON structure for better backend parsing
+            const payload = JSON.stringify({ type: 'message', content: text });
+            ws.current.send(payload);
             setLogs((prev) => [...prev, `[User] ${text}`]);
         }
     };
 
-    return { logs, currentSlideCode, sendMessage, isConnected };
+    const sendCommand = (command: string) => {
+        if (ws.current && isConnected) {
+            const payload = JSON.stringify({ type: 'command', content: command });
+            ws.current.send(payload);
+            setLogs((prev) => [...prev, `[Command] Executing: ${command.toUpperCase()}`]);
+        }
+    };
+
+    return { logs, currentSlideCode, sendMessage, sendCommand, isConnected };
 }

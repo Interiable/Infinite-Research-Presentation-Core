@@ -7,6 +7,8 @@ from app.agents.researcher import researcher_node
 from app.agents.archivist import archivist_node
 from app.agents.architect import architect_node
 
+from app.agents.planner import planner_node
+
 # Define the graph
 workflow = StateGraph(AgentState)
 
@@ -15,6 +17,7 @@ workflow.add_node("SUPERVISOR", supervisor_node)
 workflow.add_node("RESEARCHER", researcher_node)
 workflow.add_node("ARCHIVIST", archivist_node)
 workflow.add_node("ARCHITECT", architect_node)
+workflow.add_node("PLANNER", planner_node) # New Node
 
 # Define Logic for Routing
 def router(state: AgentState):
@@ -30,6 +33,8 @@ def router(state: AgentState):
         return "ARCHIVIST"
     elif next_node == "ARCHITECT":
         return "ARCHITECT"
+    elif next_node == "PLANNER":
+        return "PLANNER"
     elif next_node == "END":
         return END
     else:
@@ -43,6 +48,7 @@ workflow.add_edge(START, "SUPERVISOR")
 workflow.add_edge("RESEARCHER", "SUPERVISOR")
 workflow.add_edge("ARCHIVIST", "SUPERVISOR")
 workflow.add_edge("ARCHITECT", "SUPERVISOR")
+workflow.add_edge("PLANNER", "SUPERVISOR") # Planner reports back plan
 
 # Conditional Edge from Supervisor
 workflow.add_conditional_edges(
@@ -52,13 +58,38 @@ workflow.add_conditional_edges(
         "RESEARCHER": "RESEARCHER",
         "ARCHIVIST": "ARCHIVIST",
         "ARCHITECT": "ARCHITECT",
+        "PLANNER": "PLANNER",
         "SUPERVISOR": "SUPERVISOR",
         END: END
     }
 )
 
-# Persistence
-memory = MemorySaver()
+# Persistence (SQLite for Disk Storage)
+import os
+from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 
-# Compile
-graph = workflow.compile(checkpointer=memory)
+# Resolve absolute path to backend directory
+# app/core/graph.py -> app/core -> app -> backend
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+DATA_DIR = os.path.join(BASE_DIR, "data")
+DB_PATH = os.path.join(DATA_DIR, "checkpoints.sqlite")
+
+if not os.path.exists(DATA_DIR):
+    os.makedirs(DATA_DIR)
+
+graph = None
+
+async def init_graph():
+    global graph
+    
+    print(f"INFO: Connecting to Persistence DB at: {DB_PATH}")
+    
+    import aiosqlite
+    conn = await aiosqlite.connect(DB_PATH)
+    
+    memory = AsyncSqliteSaver(conn)
+    graph = workflow.compile(checkpointer=memory)
+    return graph, conn
+
+# We remove the global compile line.
+# graph = workflow.compile(checkpointer=memory)

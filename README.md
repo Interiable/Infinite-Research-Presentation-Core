@@ -1,93 +1,88 @@
-# Infinite Research Presentation Core (v2026)
+# 🌌 Gravity AI Agent v2.0 (Architect Edition)
 
-**Autonomous Recursive Research & Infographic Agent System**
+**"From Chaos to Structure: The Plan-First AI Agent"**
 
-An advanced AI Agent system that continuously researches topics, plans narratives, and generates high-quality HTML5/React infographic slides. Driven by a "Perfectionist" Supervisor (Gemini 3 Pro) and supported by deep research and local archiving agents.
+This project is an advanced, autonomous AI Agent system built with **LangGraph** and **Google Gemini Models**. It is designed to emulate a human engineering team, featuring strict role separation, meticulous planning, and accumulative knowledge building.
 
-![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![Status](https://img.shields.io/badge/status-Active_Development-neon_green)
+---
 
 ## 🚀 Key Features
 
--   **Recursive Research Loop**: Continuously gathers web (Deep Research) and local data until the "Perfectionist" Supervisor is satisfied.
--   **Strict Quality Gates**:
-    -   **Content Gate**: Verifies narrative logic/flow before design begins.
-    -   **Design Gate**: Pixel-perfect critique of React components.
--   **Mission Control Dashboard**:
-    -   Cyberpunk-themed React UI.
-    -   Real-time "Think Logs" via WebSockets.
-    -   Hot-Reloading Slide Preview.
--   **Bias for Action**: Optimistic non-blocking workflow that assumes user intent to keep progress moving.
+### 1. 🧠 Step-by-Step Architecture (The "Architect" Brain)
+Unlike typical chatbots that rush to answer, this agent **Plans First**.
+- **Planner Agent**: Before any execution, it generates a structured **Project Plan** (e.g., Phase 1: Research -> Phase 2: Design).
+- **Sequential Execution**: The Supervisor enforces strict adherence to the plan. Phase 2 starts only after Phase 1 is marked `[COMPLETE]`.
+- **Artifact**: You can see the live plan in `project_plan.md`.
 
-## 🛠️ Tech Stack (v2026)
+### 2. 📚 Accumulative Research (Smart Expansion)
+Research reports **grow** over time instead of being rewritten.
+- **"Preserve & Append"**: The AI never deletes valid details. It appends new findings to the existing body.
+- **"Smart Evolution"**: The AI acts as a "Lead Editor", correcting errors and restructuring flow while strictly maintaining density and depth.
+- **Outcome**: A massive, detailed report that gets smarter with every iteration.
 
--   **Backend**: Python, FastAPI, LangGraph, LangChain.
--   **Frontend**: React (Vite), Tailwind CSS v4, Framer Motion.
--   **AI Models**:
-    -   **Supervisor**: Gemini 3 Pro ("Steve Jobs" Persona).
-    -   **Researcher**: Gemini 3 Flash + Google Deep Research API.
-    -   **Archivist**: Qwen 3 (32B) local model via Ollama.
+### 3. ⏱️ Command History UI
+NEVER lose track of what you said.
+- A new **History Panel** (Clock Icon) allows you to view the full log of your commands within the current session.
+- Powered by persistent `sqlite` state storage.
 
-## 📦 Installation
+### 4. ⚡ Tiered Intelligence
+- **Planner/Supervisor**: Uses `gemini-2.0-flash-exp` for fast, structured decision making.
+- **Deep Researcher**: Uses `gemini-3-flash-preview` for grounded, high-speed data retrieval.
+- **Local LLM**: Integrated fallback for cost-efficient refinement.
+
+---
+
+## 🛠️ Tech Stack
+
+- **Backend**: Python, FastAPI, LangGraph, Google Gemini API
+- **Frontend**: React, Vite, TypeScript, TailwindCSS
+- **Persistence**: `AsyncSqliteSaver` (SQLite) - The "Hippocampus" of the system.
+- **Knowledge Base**: ChromaDB (Vector Store) for local document retrieval.
+
+---
+
+## 🏃 Implementation Guide
 
 ### Prerequisites
--   Python 3.12+
--   Node.js 20+
--   [Ollama](https://ollama.com) (for Local LLM)
+- Python 3.10+
+- Node.js 18+
+- Google Gemini API Key
 
-### 1. Clone & Setup
+### Quick Start
+This system comes with a "One-Click" launcher that handles backend, frontend, and tunnel creation.
+
 ```bash
-git clone https://github.com/Interiable/Infinite-Research-Presentation-Core.git
-cd Infinite-Research-Presentation-Core
+# 1. Clone & Setup
+git clone [repo-url]
+cd LangAIAgent
+
+# 2. Configure Environment
+cp backend/.env.example backend/.env
+# Edit backend/.env and add your GOOGLE_API_KEY
+
+# 3. Launch System
+python share_system.py
 ```
 
-### 2. Backend Setup
-```bash
-cd backend
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-
-# Create .env file
-cp .env.example .env
-# EDIT .env with your keys: GOOGLE_API_KEY, TAVILY_API_KEY
-```
-
-### 3. Frontend Setup
-```bash
-cd frontend
-npm install
-```
-
-### 4. Local Model Setup
-```bash
-ollama run qwen3:32b
-```
-
-## 🖥️ Usage
-
-1.  **Start Backend**:
-    ```bash
-    cd backend
-    source venv/bin/activate
-    uvicorn app.main:app --reload
-    ```
-2.  **Start Frontend**:
-    ```bash
-    cd frontend
-    npm run dev
-    ```
-3.  **Access Mission Control**:
-    Open [http://localhost:5174](http://localhost:5174) (or 5173).
+---
 
 ## 📂 Project Structure
+
 ```
-├── backend/            # FastAPI + LangGraph Agents
-│   ├── app/agents/     # Supervisor, Researcher, Archivist, Architect
-│   ├── app/core/       # State definition, Graph logic
-│   └── app/api/        # Endpoints, WebSockets
-├── frontend/           # React Mission Control
-│   ├── src/components/ # Chat, Terminal, SlidePreview
-│   └── src/hooks/      # WebSocket logic
-└── workspace/          # Data Output Directory
+LangAIAgent/
+├── backend/
+│   ├── app/
+│   │   ├── agents/          # Role-Based Agents (Planner, Supervisor, Researcher...)
+│   │   ├── core/            # Graph Logic & State Schema
+│   │   └── api/             # FastAPI Endpoints
+│   ├── data/                # SQLite Database (System Memory - CAUTION: Do Not Delete)
+│   └── artifacts/           # Generated Output (Slides, Reports)
+└── frontend/
+    └── src/
+        └── components/      # React UI Components (ChatPanel, etc.)
 ```
+
+---
+
+## 🛡️ License
+Private Agent System. Developed for Advanced AI Research.

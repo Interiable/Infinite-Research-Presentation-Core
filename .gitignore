@@ -18,3 +18,13 @@ workspace/logs
 
 # Workspace Output (optional, usually we want to keep source but maybe not generated binaries)
 # workspace/output
+
+# Backend Data (Persistence)
+backend/data/
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+
+# Generated Artifacts
+backend/artifacts/
+

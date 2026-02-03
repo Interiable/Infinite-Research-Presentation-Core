@@ -6,12 +6,18 @@ from langgraph.graph import END
 from app.core.state import AgentState
 from app.agents.prompts import SUPERVISOR_SYSTEM_PROMPT, CONTENT_CRITIQUE_PROMPT, DESIGN_CRITIQUE_PROMPT
 
-# Initialize Gemini 3 Pro (using the preview identifier if available, or falling back to a supported string)
-# Note: In a real scenario, this string would be 'gemini-3.0-pro-preview' or similar. 
-# We'll use a placeholder that assumes the environment variable handles the mapping or we use the latest supported.
-llm = ChatGoogleGenerativeAI(
-    model="gemini-1.5-pro", # Updating to "gemini-3.0-pro" when API officially supports string
-    temperature=0.2, # Low temp for precise routing/critique
+# --- TIERED MODEL STRATEGY ---
+# 1. Pro Model: For High-Level Planning & Critique
+llm_pro = ChatGoogleGenerativeAI(
+    model="gemini-2.0-flash-exp", 
+    temperature=0.2, 
+    google_api_key=os.getenv("GOOGLE_API_KEY")
+)
+
+# 2. Flash Model: For repetitive tasks or simple routing (if needed)
+llm_flash = ChatGoogleGenerativeAI(
+    model="gemini-3-flash-preview", 
+    temperature=0.0, 
     google_api_key=os.getenv("GOOGLE_API_KEY")
 )
 
@@ -19,67 +25,79 @@ def supervisor_node(state: AgentState):
     """
     The Supervisor determines the next step based on the current state.
     It acts as the Router and the Judge.
+    Uses Pro model for Critiques to ensure high quality planning.
     """
-    messages = state['messages']
-    current_step = state.get('next', 'PLANNING')
-    storyboard = state.get('storyboard', '')
-    slide_code = state.get('slide_code', {})
+    # --- PLAN-DRIVEN SUPERVISOR LOGIC ---
     
-    # 1. Routing Logic based on Phase
-    # This is a simplified heuristic logic for the "Steve Jobs" decision tree. 
-    # In a full implementation, we'd use function calling or structured output to determine the 'next' field dynamically.
+    # 0. Check if Plan exists
+    plan = state.get('plan', [])
+    current_index = state.get('current_step_index', 0)
     
-    # If we are just starting or have new user input
-    if not state.get('next'):
-        return {"next": "RESEARCHER", "messages": [SystemMessage(content="연구 단계를 시작합니다.")]}
-    
-    # helper to get time
-    from datetime import datetime
-    now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-    # 2. Content Critique Gate (Phase 2 -> 3)
-    # If the researcher/archivist has finished and we have a draft storyboard, we critique it.
-    if current_step == "STORYBOARD_REVIEW":
-        critique_response = llm.invoke([
-            SystemMessage(content=SUPERVISOR_SYSTEM_PROMPT.format(current_time=now_str)),
-            HumanMessage(content=CONTENT_CRITIQUE_PROMPT.format(topic=state.get('research_topic', 'Unknown')))
-        ])
+    # If no plan, route to Planner
+    if not plan:
+        return {"next": "PLANNER"}
         
-        # Simple string parsing for this scaffold - in prod use Structured Output
-        if "APPROVE" in critique_response.content.upper():
-            return {
-                "next": "ARCHITECT", 
-                "storyboard_critique": critique_response.content,
-                "messages": [SystemMessage(content="스토리보드가 승인되었습니다. 디자인 작업을 시작합니다.")]
-            }
-        else:
-            # Send back for more research or re-synthesis
-            return {
-                "next": "RESEARCHER", 
-                "storyboard_critique": critique_response.content,
-                "messages": [SystemMessage(content=f"스토리보드 반려됨: {critique_response.content}")]
-            }
-
-    # 3. Design Critique Gate (Phase 3 -> 4 -> Loop)
-    if current_step == "DESIGN_REVIEW":
-        critique_response = llm.invoke([
-            SystemMessage(content=SUPERVISOR_SYSTEM_PROMPT.format(current_time=now_str)),
-            HumanMessage(content=DESIGN_CRITIQUE_PROMPT.format(version=state.get('current_version', 1)))
-        ])
+    # 1. Check if all steps completed
+    if current_index >= len(plan):
+        return {
+            "next": "END",
+            "messages": [SystemMessage(content="모든 계획이 완료되었습니다.")]
+        }
         
-        if "APPROVE" in critique_response.content.upper():
-            return {
-                "next": "END", # Or wait for user
-                "critique_feedback": critique_response.content,
-                "messages": [SystemMessage(content="디자인 승인 완료. 버전이 저장되었습니다.")]
-            }
-        else:
-            return {
-                "next": "ARCHITECT", # Redo design
-                "critique_feedback": critique_response.content,
-                "messages": [SystemMessage(content=f"디자인 반려됨: {critique_response.content}")]
-            }
+    # 2. Get Current Step
+    current_step = plan[current_index]
+    step_id = current_step['id']
+    assigned_to = current_step['assigned_to']
+    
+    # 3. Artifact Update: Save current plan status to file (for user visibility)
+    # We mark current as 'in_progress' conceptually for the UI, or just 'active'
+    from app.utils import save_artifact
+    
+    plan_text = "# 📋 Project Execution Plan\n\n"
+    for idx, step in enumerate(plan):
+        mark = "[ ]"
+        if idx < current_index: mark = "[x]"
+        elif idx == current_index: mark = "[>]" # Current
+        
+        plan_text += f"### {mark} Step {idx+1}: {step['title']}\n"
+        plan_text += f"- **Goal**: {step['description']}\n"
+        plan_text += f"- **Agent**: {step['assigned_to']}\n\n"
+        
+    save_artifact("project_plan", plan_text, "md")
+    
+    # 4. Routing Logic
+    # If we are just starting this step (status was pending), we route to worker.
+    # The worker will return to Supervisor. When they return, we assume completion of that hop.
+    # But wait, LangGraph loop returns to Supervisor after Worker.
+    # So we need to know if the Worker JUST finished or if we need to send them.
+    
+    # We can detect this by checking who sent the last message.
+    last_msg = messages[-1]
+    sender = "system"
+    if hasattr(last_msg, 'name'): sender = last_msg.name
+    # Or simply context.
+    
+    # SIMPLIFICATION:
+    # If the last node was the assigned worker, we mark done and move next.
+    # If not (e.g. Supervisor or Planner just ran), we send to worker.
+    
+    last_node = state.get("next", "")
+    
+    if last_node == assigned_to:
+        # Worker finished. Mark complete and increment.
+        # Update specific PlanStep status if we want (optional for MVP)
+        return {
+            "next": "SUPERVISOR", # Return to self to evaluate next step
+            "current_step_index": current_index + 1,
+            "messages": [SystemMessage(content=f"Step {current_index+1} 완료. 다음 단계로 이동합니다.")]
+        }
+    else:
+        # We need to execute this step.
+        # Inject Topic/Context for the worker based on the Step Description
+        return {
+            "next": assigned_to,
+            "research_topic": current_step['description'], # Override topic with specific step goal
+            "messages": [SystemMessage(content=f"Step {current_index+1} 시작: {current_step['title']}")]
+        }
 
-    # Default Fallback for now
-    return {"next": "RESEARCHER"}
 
