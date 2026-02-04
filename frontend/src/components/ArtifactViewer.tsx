@@ -5,9 +5,10 @@ import { FileText, RefreshCw, LayoutTemplate } from 'lucide-react';
 
 interface ArtifactViewerProps {
     onClose: () => void;
+    threadId: string;
 }
 
-export const ArtifactViewer: React.FC<ArtifactViewerProps> = ({ onClose }) => {
+export const ArtifactViewer: React.FC<ArtifactViewerProps> = ({ onClose, threadId }) => {
     const [files, setFiles] = useState<string[]>([]);
     const [selectedFile, setSelectedFile] = useState<string | null>(null);
     const [fileContent, setFileContent] = useState<string>("");
@@ -15,7 +16,7 @@ export const ArtifactViewer: React.FC<ArtifactViewerProps> = ({ onClose }) => {
 
     const fetchFiles = async () => {
         try {
-            const res = await fetch('http://localhost:8000/api/artifacts');
+            const res = await fetch(`http://localhost:8000/api/artifacts?thread_id=${threadId}`);
             const data = await res.json();
             if (data.files) {
                 setFiles(data.files);
@@ -71,7 +72,7 @@ export const ArtifactViewer: React.FC<ArtifactViewerProps> = ({ onClose }) => {
         setLoading(true);
         setSelectedFile(filename);
         try {
-            const res = await fetch(`http://localhost:8000/api/artifacts/${filename}`);
+            const res = await fetch(`http://localhost:8000/api/artifacts/${filename}?thread_id=${threadId}`);
             const data = await res.json();
             if (data.content) {
                 const cleanContent = parseContent(data.content);

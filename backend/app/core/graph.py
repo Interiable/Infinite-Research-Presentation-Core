@@ -8,6 +8,7 @@ from app.agents.archivist import archivist_node
 from app.agents.architect import architect_node
 
 from app.agents.planner import planner_node
+from app.agents.deep_researcher import deep_researcher_node
 
 # Define the graph
 workflow = StateGraph(AgentState)
@@ -15,6 +16,7 @@ workflow = StateGraph(AgentState)
 # Add Nodes
 workflow.add_node("SUPERVISOR", supervisor_node)
 workflow.add_node("RESEARCHER", researcher_node)
+workflow.add_node("DEEP_RESEARCHER", deep_researcher_node)
 workflow.add_node("ARCHIVIST", archivist_node)
 workflow.add_node("ARCHITECT", architect_node)
 workflow.add_node("PLANNER", planner_node) # New Node
@@ -29,6 +31,8 @@ def router(state: AgentState):
     # Map 'next' string to actual Node Names
     if next_node == "RESEARCHER":
         return "RESEARCHER"
+    elif next_node == "DEEP_RESEARCHER":
+        return "DEEP_RESEARCHER"
     elif next_node == "ARCHIVIST":
         return "ARCHIVIST"
     elif next_node == "ARCHITECT":
@@ -46,6 +50,7 @@ workflow.add_edge(START, "SUPERVISOR")
 
 # Workers always report back to Supervisor
 workflow.add_edge("RESEARCHER", "SUPERVISOR")
+workflow.add_edge("DEEP_RESEARCHER", "SUPERVISOR")
 workflow.add_edge("ARCHIVIST", "SUPERVISOR")
 workflow.add_edge("ARCHITECT", "SUPERVISOR")
 workflow.add_edge("PLANNER", "SUPERVISOR") # Planner reports back plan
@@ -56,6 +61,7 @@ workflow.add_conditional_edges(
     router,
     {
         "RESEARCHER": "RESEARCHER",
+        "DEEP_RESEARCHER": "DEEP_RESEARCHER",
         "ARCHIVIST": "ARCHIVIST",
         "ARCHITECT": "ARCHITECT",
         "PLANNER": "PLANNER",

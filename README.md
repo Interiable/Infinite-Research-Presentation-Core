@@ -1,68 +1,98 @@
-# 🌌 Gravity AI Agent v2.0 (Architect Edition)
+# 🌌 Gravity AI Agent v3.1 (Ultimate Edition - Qwen3 Powered)
 
-**"From Chaos to Structure: The Plan-First AI Agent"**
+**"Hybrid Intelligence, Absolute Quality."**
 
-This project is an advanced, autonomous AI Agent system built with **LangGraph** and **Google Gemini Models**. It is designed to emulate a human engineering team, featuring strict role separation, meticulous planning, and accumulative knowledge building.
-
----
-
-## 🚀 Key Features
-
-### 1. 🧠 Step-by-Step Architecture (The "Architect" Brain)
-Unlike typical chatbots that rush to answer, this agent **Plans First**.
-- **Planner Agent**: Before any execution, it generates a structured **Project Plan** (e.g., Phase 1: Research -> Phase 2: Design).
-- **Sequential Execution**: The Supervisor enforces strict adherence to the plan. Phase 2 starts only after Phase 1 is marked `[COMPLETE]`.
-- **Artifact**: You can see the live plan in `project_plan.md`.
-
-### 2. 📚 Accumulative Research (Smart Expansion)
-Research reports **grow** over time instead of being rewritten.
-- **"Preserve & Append"**: The AI never deletes valid details. It appends new findings to the existing body.
-- **"Smart Evolution"**: The AI acts as a "Lead Editor", correcting errors and restructuring flow while strictly maintaining density and depth.
-- **Outcome**: A massive, detailed report that gets smarter with every iteration.
-
-### 3. ⏱️ Command History UI
-NEVER lose track of what you said.
-- A new **History Panel** (Clock Icon) allows you to view the full log of your commands within the current session.
-- Powered by persistent `sqlite` state storage.
-
-### 4. ⚡ Tiered Intelligence
-- **Planner/Supervisor**: Uses `gemini-2.0-flash-exp` for fast, structured decision making.
-- **Deep Researcher**: Uses `gemini-3-flash-preview` for grounded, high-speed data retrieval.
-- **Local LLM**: Integrated fallback for cost-efficient refinement.
+This is an advanced, autonomous AI Agent system designed to function as a complete **R&D Team**. It combines the cost-efficiency of **High-Performance Local LLMs** with the reasoning power of Gemini Pro and GPT-5.2, all orchestrated by a rigorous Supervisor.
 
 ---
 
-## 🛠️ Tech Stack
+## 🚀 Key Features (v3.1 Update)
 
-- **Backend**: Python, FastAPI, LangGraph, Google Gemini API
-- **Frontend**: React, Vite, TypeScript, TailwindCSS
-- **Persistence**: `AsyncSqliteSaver` (SQLite) - The "Hippocampus" of the system.
-- **Knowledge Base**: ChromaDB (Vector Store) for local document retrieval.
+### 1. 🛡️ Polyglot Fallback Engine ("The Brain that Never Sleeps")
+The system uses a tiered intelligence strategy to ensure zero downtime and maximum quality:
+1.  **Primary**: **Gemini 3 Pro** (High Reasoning, Polyglot).
+2.  **Secondary**: **OpenAI GPT-5.2** (High Quality Fallback). If Gemini hits a quota limit (429), the system *instantly* switches to GPT-5.2 while preserving the entire conversation context.
+3.  **Local LLM**: **Qwen3-32B (Dense)** running via Ollama.
+    -   **Why?**: Selected for **maximum reasoning consistency** and instruction-following capability.
+    -   **Specs**: 32B parameters (Dense), 20GB VRAM usage. Fits comfortably on RTX 5090.
+    -   **Trade-off**: Slightly slower than MoE, but provides deeper, more stable analysis.
+
+### 2. 🧠 Strict Librarian & North Star Protocol ("The Anti-Drift System")
+-   **Strict Librarian**: The Planner filters and selects only relevant files (`.pdf`, `.txt`, `.md`, **`.docx`**) from the `data/` folder and connected repositories.
+    -   *Update*: Now fully supports Microsoft Word (`.docx`) deep reading.
+-   **North Star Protocol**: To prevent "Goal Drift", the Supervisor rejects any work that deviates from the original user intent.
+
+### 3. ✍️ Deep Recursive Writer ("The Book Author")
+Instead of shallow summaries, the Researcher writes **Book-Quality Reports**:
+-   **Blueprinting**: Generates a Table of Contents (TOC).
+-   **Deep Reading**: Reads the **FULL TEXT** of relevant PDFs/Code for each chapter (not just snippets).
+-   **Performance Tracking**: Automatically tracks and reports execution time for every chapter (e.g., "Duration: 45.2s").
+-   **Refined Supervision**: Supervisor intervenes to "Coach & Rewrite" after **10 failed attempts** (Standard) to ensure quality.
+
+### 4. 🎨 Iterative Architect ("The Designer")
+Builds complex React applications (Slides/Dashboards) component by component:
+-   **Blueprint First**: Designs the slide structure.
+-   **Component Loop**: Codes each slide individually (`Slide1.tsx`, `Slide2.tsx`...).
+-   **Feedback Loop**: If the Supervisor critiques a specific slide, the Architect refactors ONLY that slide.
+
+---
+
+## 🛠️ System Architecture
+
+| Agent | Role | Engine | Key Capability |
+| :--- | :--- | :--- | :--- |
+| **Planner** | Strategist | Gemini 3 Pro | **Context Filtering** (Strict Librarian) |
+| **Supervisor** | Gatekeeper | Polyglot (Pro/GPT) | **Quality Control** (Intervenes @ 10 failures) |
+| **Researcher** | Writer | **Qwen3-32B (Dense)** | **Recursive Drafting** (Deep Read + Timer) |
+| **Architect** | Developer | Gemini 3 Pro | **Iterative Coding** (React/Lucide) |
 
 ---
 
 ## 🏃 Implementation Guide
 
 ### Prerequisites
-- Python 3.10+
-- Node.js 18+
-- Google Gemini API Key
+-   Python 3.10+
+-   Node.js 18+
+-   **Ollama** running locally with `qwen3:32b`
+-   **Hardware**: RTX 5090 Recommended for full performance (20GB VRAM required)
+-   API Keys: `GOOGLE_API_KEY`, `OPENAI_API_KEY` (Optional fallback)
 
-### Quick Start
-This system comes with a "One-Click" launcher that handles backend, frontend, and tunnel creation.
-
+### 1. Setup Environment
 ```bash
-# 1. Clone & Setup
+# Clone Repository
 git clone [repo-url]
 cd LangAIAgent
 
-# 2. Configure Environment
-cp backend/.env.example backend/.env
-# Edit backend/.env and add your GOOGLE_API_KEY
+# Create Virtual Environment (Recommended)
+python -m venv backend/venv
+source backend/venv/bin/activate
 
-# 3. Launch System
+# Install Dependencies
+pip install -r backend/requirements.txt
+```
+
+### 2. Configure Credentials
+Create `backend/.env`:
+```ini
+GOOGLE_API_KEY=AIzaSy...
+OPENAI_API_KEY=sk-proj...
+# Comma-separated absolute paths to your research data/code
+LOCAL_RESEARCH_DIR=/home/user/data,/home/user/projects/robot_code
+# Local Model Selection
+LOCAL_LLM_MODEL=qwen3:32b
+```
+
+### 3. Prepare Data
+Put your PDF papers, text files, Word docs (`.docx`) or code repositories into `backend/data/` or link them via `LOCAL_RESEARCH_DIR`.
+
+### 4. Launch System
+```bash
 python share_system.py
 ```
+This script handles everything:
+-   Starts the FastAPI Backend.
+-   Starts the React Frontend (Vite).
+-   Sets up the Tunnel (ngrok/localtunnel) for sharing.
 
 ---
 
@@ -72,14 +102,13 @@ python share_system.py
 LangAIAgent/
 ├── backend/
 │   ├── app/
-│   │   ├── agents/          # Role-Based Agents (Planner, Supervisor, Researcher...)
-│   │   ├── core/            # Graph Logic & State Schema
-│   │   └── api/             # FastAPI Endpoints
-│   ├── data/                # SQLite Database (System Memory - CAUTION: Do Not Delete)
-│   └── artifacts/           # Generated Output (Slides, Reports)
+│   │   ├── agents/          # Planner, Supervisor, Researcher, Architect
+│   │   ├── core/            # State Schema (AgentState, Graph)
+│   │   └── utils.py         # RobustGemini (Polyglot Wrapper)
+│   ├── data/                # Your Research Files (PDFs, Code)
+│   └── artifacts/           # Generated Reports & Slides
 └── frontend/
-    └── src/
-        └── components/      # React UI Components (ChatPanel, etc.)
+    └── src/                 # React UI
 ```
 
 ---

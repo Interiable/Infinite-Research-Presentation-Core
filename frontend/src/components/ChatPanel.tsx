@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, MessageSquare, Power, FolderOpen, Database, PauseCircle, PlusCircle, Hash, History } from 'lucide-react';
+import { Send, MessageSquare, Power, FolderOpen, Database, PauseCircle, PlayCircle, PlusCircle, Hash, History } from 'lucide-react';
+import { AgentDialogue } from './AgentDialogue';
 
 interface ChatProps {
     onSendMessage: (msg: string) => void;
     onSendCommand: (cmd: string) => void;
     isConnected: boolean;
     logs: string[];
+    dialogue: any[]; // Using any to avoid strict type duplication here, or export AgentMessage
     threadId: string;
     onNewSession: () => void;
 }
@@ -15,6 +17,7 @@ export const ChatPanel: React.FC<ChatProps> = ({
     onSendCommand,
     isConnected,
     logs,
+    dialogue,
     threadId,
     onNewSession
 }) => {
@@ -101,6 +104,9 @@ export const ChatPanel: React.FC<ChatProps> = ({
         }
     };
 
+    // --- TAB STATE ---
+    const [activeTab, setActiveTab] = useState<'log' | 'dialogue'>('dialogue'); // Default to dialogue as user requested
+
     return (
         <div className="flex flex-col h-full bg-cyber-panel border-b border-cyber-border">
             {/* Header */}
@@ -111,6 +117,7 @@ export const ChatPanel: React.FC<ChatProps> = ({
                         <MessageSquare className="w-4 h-4 text-neon-blue mr-2" />
                         <span className="text-sm font-bold tracking-wider text-neon-blue">MISSION CONTROL</span>
                     </div>
+                    {/* ... (omitted buttons) ... */}
                     <div className="flex items-center space-x-3">
                         <button
                             onClick={() => setShowFolders(!showFolders)}
@@ -157,26 +164,15 @@ export const ChatPanel: React.FC<ChatProps> = ({
                             className="bg-black/50 border border-cyber-border text-xs text-cyber-text rounded ml-2 p-1"
                             onChange={(e) => {
                                 if (e.target.value !== threadId) {
-                                    // We need to notify parent to switch
-                                    // For MVP, we can just reload the page with a query param or better yet,
-                                    // add a prop to handle switching. I'll stick to a simple prompt-based approach or 
-                                    // just expose the threadId setter via onNewSession logic if it accepted an ID.
-                                    // Actually, let's just use localStorage and reload for simplicity in this artifact constraint,
-                                    // OR better: Assume parent handles it if we had a dedicated callback.
-                                    // Since I can't easily change App.tsx props right now without checking it, 
-                                    // I'll make this specific change:
                                     const newId = e.target.value;
                                     localStorage.setItem('agent_thread_id', newId);
-                                    window.location.reload(); // Simple reload to switch context
+                                    window.location.reload();
                                 }
                             }
                             }
                             value={threadId}
                         >
                             <option value={threadId}>Current</option>
-                            {/* We need to fetch threads here or pass them in. 
-                                Let's fetch them inside this component for self-containment. 
-                            */}
                             {historyThreads.map(t => (
                                 <option key={t} value={t}>{t}</option>
                             ))}
@@ -192,42 +188,52 @@ export const ChatPanel: React.FC<ChatProps> = ({
                 </div>
             </div>
 
-            <div className="flex-1 p-4 overflow-y-auto">
-                <div className="bg-cyber-dark/50 p-4 rounded-lg border border-cyber-border mb-4">
-                    <p className="text-cyber-text text-sm mb-2">
-                        <br />
-                        현재 상태: <span className="text-neon-pink">System Active</span>
-                    </p>
+            <div className="flex-1 p-4 overflow-hidden flex flex-col min-h-0">
+                <div className="bg-cyber-dark/50 p-2 rounded-lg border border-cyber-border mb-4 flex-1 flex flex-col min-h-0">
 
-                    {/* Activity Log Monitor */}
-                    <div className="mt-4 p-3 bg-black/60 rounded border border-cyber-border h-48 overflow-y-auto font-mono text-xs">
-                        <div className="text-cyber-muted mb-2 border-b border-cyber-border pb-1 flex justify-between">
-                            <span>SYSTEM ACTIVITY LOG</span>
-                            <span className="text-neon-green animate-pulse">● LIVE</span>
-                        </div>
-                        <div className="space-y-1">
-                            {logs.length === 0 ? (
-                                <div className="text-cyber-text opacity-50 italic">Waiting for data stream...</div>
-                            ) : (
-                                logs.map((log, i) => (
-                                    <div key={i} className="text-cyber-text break-words">
-                                        <span className="text-cyber-muted mr-2">[{i + 1}]</span>
-                                        {log}
-                                    </div>
-                                ))
-                            )}
-                            <div ref={logsEndRef} />
-                        </div>
+                    {/* TAB SWITCHER */}
+                    <div className="flex border-b border-cyber-border/50 mb-2">
+                        <button
+                            className={`px-3 py-1 text-xs font-bold transition-all border-b-2 ${activeTab === 'dialogue' ? 'text-neon-green border-neon-green' : 'text-cyber-muted border-transparent hover:text-white'}`}
+                            onClick={() => setActiveTab('dialogue')}
+                        >
+                            AGENT CHAT
+                        </button>
+                        <button
+                            className={`px-3 py-1 text-xs font-bold transition-all border-b-2 ${activeTab === 'log' ? 'text-neon-blue border-neon-blue' : 'text-cyber-muted border-transparent hover:text-white'}`}
+                            onClick={() => setActiveTab('log')}
+                        >
+                            SYSTEM LOGS
+                        </button>
                     </div>
 
-                    {/* Folder List UI */}
+                    {/* CONTENT AREA */}
+                    <div className="flex-1 min-h-0 overflow-hidden relative">
+                        {activeTab === 'dialogue' ? (
+                            <AgentDialogue messages={dialogue} />
+                        ) : (
+                            <div className="p-3 bg-black/60 rounded border border-cyber-border h-full overflow-y-auto font-mono text-xs">
+                                <div className="space-y-1">
+                                    {logs.map((log, i) => (
+                                        <div key={i} className="text-cyber-text break-words">
+                                            <span className="text-cyber-muted mr-2">[{i + 1}]</span>
+                                            {log}
+                                        </div>
+                                    ))}
+                                    <div ref={logsEndRef} />
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Folder List UI (Collapsible) */}
                     {showFolders && (
-                        <div className="mt-3 p-3 bg-black/40 rounded border border-cyber-border">
+                        <div className="mt-3 p-3 bg-black/40 rounded border border-cyber-border flex-shrink-0">
                             <h4 className="text-xs font-bold text-neon-green mb-2 flex items-center">
                                 <Database className="w-3 h-3 mr-1" /> LINKED KNOWLEDGE BASES ({folders.length})
                             </h4>
                             {folders.length > 0 ? (
-                                <ul className="space-y-1">
+                                <ul className="space-y-1 max-h-24 overflow-y-auto">
                                     {folders.map((path, idx) => (
                                         <li key={idx} className="text-xs text-cyber-muted break-all flex items-start">
                                             <span className="mr-2 text-cyber-border">•</span>
@@ -241,9 +247,9 @@ export const ChatPanel: React.FC<ChatProps> = ({
                         </div>
                     )}
 
-                    {/* Command History UI */}
+                    {/* Command History UI (Collapsible) */}
                     {showHistory && (
-                        <div className="mt-3 p-3 bg-black/40 rounded border border-cyber-border h-48 overflow-y-auto">
+                        <div className="mt-3 p-3 bg-black/40 rounded border border-cyber-border h-32 overflow-y-auto flex-shrink-0">
                             <h4 className="text-xs font-bold text-neon-pink mb-2 flex items-center border-b border-cyber-border pb-1">
                                 <History className="w-3 h-3 mr-1" /> USER COMMAND HISTORY
                             </h4>
@@ -264,16 +270,26 @@ export const ChatPanel: React.FC<ChatProps> = ({
                 </div>
             </div>
 
-            <form onSubmit={handleSubmit} className="p-4 bg-cyber-dark border-t border-cyber-border relative">
-                {/* Pause Button (Absolute positioned above) */}
-                <button
-                    type="button"
-                    onClick={() => onSendCommand("pause")}
-                    className="absolute top-[-16px] left-1/2 -translate-x-1/2 bg-slate-800 text-neon-pink hover:bg-slate-700 hover:text-white px-3 py-1 rounded-full text-xs flex items-center gap-1 border border-cyber-border shadow-lg transition-all"
-                >
-                    <PauseCircle size={14} />
-                    Pause / Interrupt
-                </button>
+            <form onSubmit={handleSubmit} className="p-4 bg-cyber-dark border-t border-cyber-border relative flex-shrink-0">
+                {/* Pause/Resume Buttons */}
+                <div className="absolute top-[-20px] left-1/2 -translate-x-1/2 flex gap-2">
+                    <button
+                        type="button"
+                        onClick={() => onSendCommand("pause")}
+                        className="bg-slate-800 text-neon-pink hover:bg-slate-700 hover:text-white px-3 py-1 rounded-full text-[10px] flex items-center gap-1 border border-cyber-border shadow-lg transition-all"
+                    >
+                        <PauseCircle size={12} />
+                        Pause / Interrupt
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => onSendMessage("RESUME")}
+                        className="bg-slate-800 text-neon-green hover:bg-slate-700 hover:text-white px-3 py-1 rounded-full text-[10px] flex items-center gap-1 border border-cyber-border shadow-lg transition-all"
+                    >
+                        <PlayCircle size={12} />
+                        Resume Research
+                    </button>
+                </div>
 
                 <div className="relative">
                     <textarea
@@ -299,3 +315,4 @@ export const ChatPanel: React.FC<ChatProps> = ({
         </div >
     );
 };
+

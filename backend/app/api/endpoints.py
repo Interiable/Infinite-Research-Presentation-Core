@@ -99,42 +99,79 @@ async def get_folders():
     return {"folders": folders}
 
 @router.get("/artifacts")
-async def list_artifacts():
+async def list_artifacts(thread_id: str = None):
     """
     Lists all slide artifacts (.tsx) in the backend/artifacts directory.
+    If thread_id is provided, also scans artifacts/{thread_id}/.
     """
-    # Assuming running from root or finding path relative to this file
-    # Base path: /home/hgeon/gravity/LangAIAgent/backend/artifacts
-    # We can use a safer way to find it relative to 'app' package
     base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    artifacts_dir = os.path.join(base_dir, "artifacts")
+    artifacts_root = os.path.join(base_dir, "artifacts")
     
-    if not os.path.exists(artifacts_dir):
-        return {"files": []}
-        
     files = []
-    for f in os.listdir(artifacts_dir):
-        if f.endswith(".tsx") or f.endswith(".md"): # Scan TSX slides and MD documents
-            files.append(f)
-            
-    # Sort by creation time (newest first)
-    files.sort(key=lambda x: os.path.getmtime(os.path.join(artifacts_dir, x)), reverse=True)
+    
+    # helper to scan a dir
+    def scan_dir(path):
+        found = []
+        if os.path.exists(path):
+            for f in os.listdir(path):
+                if f.endswith(".tsx") or f.endswith(".md"):
+                    found.append(f)
+        return found
+
+    # 1. Scan Root (Legacy/Shared)
+    files.extend(scan_dir(artifacts_root))
+    
+    # 2. Scan Thread Subdir
+    if thread_id:
+        safe_thread_id = "".join([c for c in thread_id if c.isalnum() or c in ('-', '_')])
+        thread_dir = os.path.join(artifacts_root, safe_thread_id)
+        thread_files = scan_dir(thread_dir)
+        # Mark them or just add them? 
+        # For simplicity, we just add them. Use a set to avoid dupes if filename same?
+        # Actually file paths are different. The frontend just asks for filename.
+        # We need a way to tell read_artifact WHERE to look.
+        # We will prefix filename with 'thread_id/'?? 
+        # No, that might break frontend.
+        # Let's simple return list. read_artifact will try both.
+        files.extend(thread_files)
+
+    # Sort by creation time (approximation or just name)
+    # Sorting mixed dirs is hard without full paths.
+    # Let's just return unique names. If same name exists in both, thread one takes precedence?
+    # Simple dedupe
+    files = list(set(files))
+    files.sort(reverse=True) # Timestamp prefix usually handles sort
     return {"files": files}
 
 @router.get("/artifacts/{filename}")
-async def read_artifact(filename: str):
+async def read_artifact(filename: str, thread_id: str = None):
     """
     Reads the content of a specific artifact.
+    Prioritizes artifacts/{thread_id}/{filename} if it exists.
     """
     base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    artifacts_dir = os.path.join(base_dir, "artifacts")
-    file_path = os.path.join(artifacts_dir, filename)
+    artifacts_root = os.path.join(base_dir, "artifacts")
     
-    if not os.path.exists(file_path):
+    target_path = None
+    
+    # 1. Try Thread Dir
+    if thread_id:
+        safe_thread_id = "".join([c for c in thread_id if c.isalnum() or c in ('-', '_')])
+        thread_path = os.path.join(artifacts_root, safe_thread_id, filename)
+        if os.path.exists(thread_path):
+            target_path = thread_path
+            
+    # 2. Fallback to Root
+    if not target_path:
+        root_path = os.path.join(artifacts_root, filename)
+        if os.path.exists(root_path):
+            target_path = root_path
+            
+    if not target_path:
         return {"error": "File not found"}
         
     try:
-        with open(file_path, "r", encoding="utf-8") as f:
+        with open(target_path, "r", encoding="utf-8") as f:
             content = f.read()
         return {"content": content, "filename": filename}
     except Exception as e:
@@ -145,7 +182,9 @@ async def get_threads():
     """
     Returns a list of unique thread_ids stored in the SQLite DB.
     """
-    db_path = "./backend/data/checkpoints.sqlite"
+    # Resolve absolute path
+    base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    db_path = os.path.join(base_dir, "data", "checkpoints.sqlite")
     if not os.path.exists(db_path):
         return {"threads": []}
         
@@ -155,7 +194,7 @@ async def get_threads():
         # LangGraph stores thread_id in JSON encoded metadata or config typically. 
         # But correct generic schema usually has thread_id column in checkpoints table.
         # Let's target the 'checkpoints' table.
-        cursor.execute("SELECT DISTINCT thread_id FROM checkpoints ORDER BY created_at DESC")
+        cursor.execute("SELECT DISTINCT thread_id FROM checkpoints ORDER BY checkpoint_id DESC")
         threads = [row[0] for row in cursor.fetchall()]
         conn.close()
         return {"threads": threads}
@@ -272,9 +311,15 @@ async def run_graph_execution(client_id: str, user_input: str):
         await manager.broadcast(json.dumps({"type": "error", "content": "System Error: Graph not initialized."}), client_id)
         return
 
+    # Resumption Logic: If input is RESUME, we pass None to astream_events to continue existing state
+    input_data = {"messages": [HumanMessage(content=user_input)]} if user_input != "RESUME" else None
+    
+    if user_input == "RESUME":
+        await manager.broadcast(json.dumps({"type": "log", "content": "🔄 Resuming Research from Checkpoint..."}), client_id)
+
     try:
         async for event in graph_module.graph.astream_events(
-            {"messages": [HumanMessage(content=user_input)]},
+            input_data,
             config=config,
             version="v1"
         ):
@@ -311,6 +356,34 @@ async def run_graph_execution(client_id: str, user_input: str):
                             "type": "log", 
                             "content": f"🔄 Switching Context -> {data['next']}"
                         }), client_id)
+
+                    # --- AGENT DIALOGUE BROADCAST ---
+                    if 'sender' in data:
+                        # Extract the main message (dialogue)
+                        # We use the LAST message in the 'messages' list as the "Spoken" text
+                        dialogue_text = "..."
+                        if 'messages' in data and isinstance(data['messages'], list) and data['messages']:
+                            last_msg = data['messages'][-1]
+                            if hasattr(last_msg, 'content'):
+                                dialogue_text = str(last_msg.content)
+                            else:
+                                dialogue_text = str(last_msg)
+                        
+                        # Broadcast specialized dialogue event
+                        # TRUNCATION LOGIC: If message is too long (e.g. Supervisor Critique), truncate it for the UI.
+                        # The full content is usually in an artifact anyway.
+                        display_content = dialogue_text
+                        if len(display_content) > 150:
+                            display_content = display_content[:150] + "... (Click Artifacts to view full report)"
+                            
+                        print(f"DEBUG: Broadcasting Agent Message from {data['sender']}")
+                        await manager.broadcast(json.dumps({
+                            "type": "agent_message",
+                            "sender": data['sender'],
+                            "content": display_content
+                        }), client_id)
+                    else:
+                        print(f"DEBUG: Event ignored (No Sender): Keys: {list(data.keys())} | Kind: {kind}")
 
     except asyncio.CancelledError:
         print(f"Task for {client_id} was cancelled.")

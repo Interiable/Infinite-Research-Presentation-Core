@@ -1,130 +1,218 @@
 import os
+import json
+import re
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.messages import SystemMessage, HumanMessage
 
 from app.core.state import AgentState
 from app.utils import RobustGemini
 
-# --- TIERED MODEL STRATEGY ---
-# 1. Pro Model (Robust): For Complex Coding & Design
-llm_pro = RobustGemini(
-    pro_model_name="gemini-2.0-pro-exp-02-05", 
-    flash_model_name="gemini-2.0-flash-exp",
-    temperature=0.0
-)
-
-# 2. Flash Model: For Syntax Fixing & Simple Retries
+# --- CONFIGURATION ---
 llm_flash = ChatGoogleGenerativeAI(
-    model="gemini-2.0-flash-exp", 
-    temperature=0.0,
+    model="gemini-3-flash-preview", 
+    temperature=0.0, 
     google_api_key=os.getenv("GOOGLE_API_KEY")
 )
 
+# Robust Polyglot Model for Coding
+llm_pro = RobustGemini(temperature=0.0)
+
 SYSTEM_PROMPT = """
-You are the **Infographic Architect**.
-Your goal is to write **Stunning, Visual-First React Code** for a Multi-Slide Presentation.
-You use **Tailwind CSS** and **Framer Motion**.
+You are the **Lead UI/UX Architect**.
+Your goal is to build a **Stunning, Interactive React Presentation**.
+Stack: **Tailwind CSS**, **Framer Motion**, **Lucide React**.
 
-**CRITICAL LAYOUT RULES:**
-1.  **Container**: Use `h-full` and `w-full` for the main container. **NEVER use `h-screen` or `w-screen`** as it breaks preview integration.
-2.  **Navigation**: Implement an **Integrated Header Navigation**. Place the "Prev/Next" buttons and "Page Counter" (e.g., "1 / 5") directly in the top `<header>` area (flexbox), NOT as absolute floating buttons. This ensures nothing is clipped.
-3.  **Page Counter**: MUST be visible in the header next to the navigation arrows.
-4.  **Layout**: Use a `flex min-h-full flex-col` structure. Header at top, Content in `flex-1`. overflow-y-auto only in the content area if needed.
+**DESIGN RULES:**
+1. **Visual-First**: Use Charts, Icons, and Grids. Avoid walls of text.
+2. **Modern**: Glassmorphism, gradients, clean typography.
+3. **LANGUAGE**: All visible text MUST be in **Korean**.
 
-**AESTHETIC REQUIREMENTS (Infographic Style):**
-1.  **Visuals Over Text**: Eliminate long paragraphs. Use Big Numbers, Icons, Charts, Progress Bars, and Grids.
-2.  **Density**: Maximum 30 words per slide. If there is more info, convert it to a visual representation.
-3.  **Modern UI**: Use Glassmorphism (`backdrop-blur`, `bg-white/10`), Neon Gradients (`bg-gradient-to-r`), and subtle borders.
-4.  **Components**: Use `lucide-react` icons extensively for visual metaphors.
-
-**Technical Constraints:**
-1.  **Structure**: Single File. Main component must manage `currentSlide` state.
-2.  **Export**: `export default function Presentation() {...}`
-3.  **Libraries**: You have `framer-motion`, `lucide-react`, `recharts` (if needed - assume available).
-4.  **Interactivity**: You MUST implement **Keyboard Navigation** (ArrowRight/ArrowLeft) using `useEffect` on the window object.
+**TECHNICAL CONSTRAINTS:**
+- **Navigation**: The main component handles state (`currSlide`).
+- **Layout**: Full height (`h-full`), flex column.
 """
 
-def architect_node(state: AgentState):
-    storyboard = state.get('storyboard', '')
-    version = state.get('current_version', 1)
-    critique = state.get('critique_feedback', '')
+def extract_json(text):
+    """Robust JSON extractor"""
+    try:
+        if isinstance(text, list): text = str(text)
+        match = re.search(r"```json\s*(.*?)\s*```", text, re.DOTALL)
+        if match: return json.loads(match.group(1))
+        match = re.search(r"(\{.*\})", text, re.DOTALL)
+        if match: return json.loads(match.group(1))
+        return json.loads(text)
+    except:
+        return None
+
+def extract_code(text):
+    """Robust Code extractor"""
+    if isinstance(text, list): text = str(text)
+    match = re.search(r"```(?:tsx|jsx|javascript|typescript)?\s*(.*?)```", text, re.DOTALL)
+    if match: return match.group(1).strip()
+    return text.replace("```", "").strip()
+
+def architect_node(state: AgentState, config):
+    thread_id = config.get("configurable", {}).get("thread_id", "default")
     
+    # Input Source
+    content = state.get('storyboard', '') or state.get('shared_knowledge', '') or "No Content"
+    version = state.get('current_version', 1)
+    
+    # Critique Handling
+    critique = state.get('critique_feedback', '')
     critique_prompt = ""
     if critique:
-        # Get previous code (assuming single slide focus for now or getting all)
-        # In a real multi-slide scenario, we'd need to know which slide to fix. 
-        # Here we just dump the previous version's main code.
         previous_code = state.get('slide_code', {}).get(1, '')
-        critique_prompt = f"\n\n**FEEDBACK ON PREVIOUS VERSION:**\n{critique}\n\n**PREVIOUS CODE:**\n{previous_code}\n\n**Instruction:** Refactor the Previous Code to fix the issues. Keep what works, fix what doesn't."
-
-    messages = [
-        SystemMessage(content=SYSTEM_PROMPT),
-        HumanMessage(content=f"Create a high-quality interactive presentation for this topic.\n\nContext:\n{storyboard}\n\nVersion: {version}{critique_prompt}")
-    ]
+        critique_prompt = f"\n\n**CRITICAL FEEDBACK (FIX REQUIRED):**\n{critique}\n\n**PREVIOUS CODE:**\n{previous_code}\n\n**INSTRUCTION:** Refactor the previous code to address the feedback."
     
-    # Validation Loop
-    max_retries = 3
-    current_try = 0
-    
-    while current_try < max_retries:
-        # Optimization: Use Flash for retries (Syntax Fixing)
-        current_llm = llm_pro if current_try == 0 else llm_flash
-        
-        response = current_llm.invoke(messages)
-        
-        # Robust Content Parsing
-        content = response.content
-        if isinstance(content, list):
-            parsed_parts = []
-            for c in content:
-                if isinstance(c, dict) and 'text' in c:
-                    parsed_parts.append(c['text'])
-                elif hasattr(c, 'text'):
-                    parsed_parts.append(c.text)
-                else:
-                    parsed_parts.append(str(c))
-            content = " ".join(parsed_parts)
-        else:
-            content = str(content)
-            
-        code = content
-        # Try to extract code block with regex
-        import re
-        match = re.search(r"```(?:tsx|jsx|javascript|typescript)?\s*(.*?)```", content, re.DOTALL)
-        if match:
-            code = match.group(1).strip()
-        else:
-            # Fallback: simple replace if no block found (or just one block without closer)
-            code = content.replace("```jsx", "").replace("```tsx", "").replace("```", "").strip()
-        
-        # Self-Correction Check
-        is_valid = True
-        error_msg = ""
-        
-        if code.startswith("{") and "type" in code and "text" in code:
-            is_valid = False
-            error_msg = "Error: You outputted a Python dictionary string instead of raw React code."
-        elif "import React" not in code and "export default" not in code:
-             is_valid = False
-             error_msg = "Error: Code must include imports and export default."
-             
-        if is_valid:
-            # Save Artifact
-            from app.utils import save_artifact
-            save_artifact(f"slide_v{version}", code, "tsx")
-            
-            return {
-                "slide_code": {1: code}, 
-                "messages": [SystemMessage(content=f"Slide Code Generated (v{version}).")]
-            }
-        
-        # If failed, add to history and retry
-        print(f"⚠️ Architect Handled Error: {error_msg}. Retrying...")
-        messages.append(HumanMessage(content=f"SYSTEM_ALERT: {error_msg} Please output ONLY the raw React TSX code. Do not wrap in JSON."))
-        current_try += 1
+    print(f"🎨 Architect Started. Version: {version}")
 
-    # Fallback if all retries fail
+    # 1. BLUEPRINTING (Structure)
+    print("📐 Phase 1: Blueprinting Slide Deck...")
+    blueprint_prompt = f"""
+    Analyze this report and outline a Slide Deck (5-8 slides).
+    Report:
+    {content[:15000]}...
+    
+    Output JSON ONLY:
+    {{
+      "slides": [
+        {{ "id": 1, "type": "Title", "title": "Main Title", "key_points": ["Sub 1", "Sub 2"] }},
+        {{ "id": 2, "type": "Content", "title": "Section 1", "key_points": ["Chart data...", "Summary..."] }}
+      ]
+    }}
+    """
+    try:
+        bp_res = llm_flash.invoke([HumanMessage(content=blueprint_prompt)])
+        blueprint = extract_json(bp_res.content)
+        slides = blueprint.get('slides', [])
+        if not slides: raise Exception("Empty slides")
+    except Exception as e:
+        print(f"⚠️ Blueprint Failed: {e}. Fallback to default.")
+        slides = [{"id": 1, "type": "Title", "title": "Report", "key_points": ["See full report"]}]
+
+    # 2. COMPONENT LOOP (Drafting each slide)
+    slide_components = []
+    
+    for i, slide in enumerate(slides):
+        print(f"🔨 Phase 2: Building Slide {i+1}/{len(slides)}: {slide.get('title')}...")
+        
+        slide_prompt = f"""
+        **Write React Code for Slide {i+1}**
+        Type: {slide['type']}
+        Title: {slide['title']}
+        Points: {slide['key_points']}
+        
+        **Requirement:**
+        - Create a verifiable `const Slide{i+1} = () => {{ ... }}` component.
+        - **KOREAN TEXT ONLY**.
+        - Use `framer-motion` for entrances.
+        - Use `lucide-react` icons (e.g., Check, ArrowRight, BarChart).
+        - **NO IMPORTS** (They will be added globally later).
+        - Just output the FUNCTION COMPONENT code.
+        
+        {critique_prompt}
+        """
+        
+        try:
+            # Use Pro for coding
+            code_res = llm_pro.invoke([
+                SystemMessage(content=SYSTEM_PROMPT),
+                HumanMessage(content=slide_prompt)
+            ])
+            code = extract_code(code_res.content)
+            slide_components.append(code)
+        except Exception as e:
+            print(f"⚠️ Slide {i+1} Failed: {e}")
+            slide_components.append(f"const Slide{i+1} = () => <div className='p-10'>Error generating slide</div>")
+
+    # 3. ASSEMBLY (Stitching it together)
+    print("🏗️ Phase 3: Final Assembly...")
+    
+    imports = """
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { 
+  ArrowRight, ArrowLeft, Check, Star, BarChart, 
+  PieChart, Activity, Globe, Shield, Terminal, 
+  Cpu, Zap, Layers, FileText, User
+} from 'lucide-react';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RcTooltip, Legend, ResponsiveContainer } from 'recharts';
+"""
+
+    main_component_start = """
+export default function Presentation() {
+  const [currentSlide, setCurrentSlide] = useState(0);
+
+  const nextSlide = () => setCurrentSlide(prev => (prev + 1) % slides.length);
+  const prevSlide = () => setCurrentSlide(prev => (prev - 1 + slides.length) % slides.length);
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'ArrowRight') nextSlide();
+      if (e.key === 'ArrowLeft') prevSlide();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+"""
+
+    # Create the 'slides' array text
+    slide_array_str = "  const slides = [\n"
+    for i in range(len(slide_components)):
+        slide_array_str += f"    {{ component: Slide{i+1} }},\n"
+    slide_array_str += "  ];\n"
+
+    # Main Render
+    main_render = """
+  const CurrentSlideComponent = slides[currentSlide].component;
+
+  return (
+    <div className="h-full w-full bg-gray-900 text-white overflow-hidden font-sans selection:bg-cyan-500/30">
+      {/* Header / Nav */}
+      <header className="fixed top-0 w-full h-16 bg-gray-900/80 backdrop-blur-md flex items-center justify-between px-6 z-50 border-b border-white/10">
+        <div className="flex items-center gap-2">
+            <Activity className="text-cyan-400 w-5 h-5" />
+            <span className="font-bold tracking-wider text-sm text-gray-300">AI REPORT</span>
+        </div>
+        <div className="flex items-center gap-4">
+            <span className="text-sm font-mono text-gray-400">{currentSlide + 1} / {slides.length}</span>
+            <div className="flex gap-2">
+                <button onClick={prevSlide} className="p-2 hover:bg-white/10 rounded-full transition-colors"><ArrowLeft className="w-5 h-5" /></button>
+                <button onClick={nextSlide} className="p-2 hover:bg-white/10 rounded-full transition-colors"><ArrowRight className="w-5 h-5" /></button>
+            </div>
+        </div>
+      </header>
+
+      {/* Main Content Area */}
+      <main className="h-full pt-16 relative">
+        <AnimatePresence mode='wait'>
+            <motion.div 
+                key={currentSlide}
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.4, ease: "easeInOut" }}
+                className="h-full w-full"
+            >
+                <CurrentSlideComponent />
+            </motion.div>
+        </AnimatePresence>
+      </main>
+    </div>
+  );
+}
+"""
+    
+    # Combine Everything
+    full_code = imports + "\n\n" + "\n\n".join(slide_components) + "\n\n" + main_component_start + slide_array_str + main_render
+
+    # Save Artifact
+    from app.utils import save_artifact
+    save_artifact(f"slide_v{version}", full_code, "tsx", thread_id=thread_id)
+            
     return {
-        "slide_code": {},
-        "messages": [SystemMessage(content="Failed to generate valid code after 3 attempts.")]
+        "slide_code": {1: full_code}, 
+        "messages": [SystemMessage(content=f"Slides Generated (Iterative Mode). Total Slides: {len(slides)}")]
     }

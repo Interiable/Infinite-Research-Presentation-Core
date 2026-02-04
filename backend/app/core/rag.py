@@ -11,7 +11,11 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.document_loaders import TextLoader, PyPDFLoader, DirectoryLoader
 
 class VectorStoreManager:
-    def __init__(self, persistence_dir: str = "./backend/data/chroma_db"):
+    def __init__(self, persistence_dir: str = None):
+        if persistence_dir is None:
+            # Resolve absolute path: app/core/rag.py -> app/core -> app -> backend
+            base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+            persistence_dir = os.path.join(base_dir, "data", "chroma_db")
         self.persistence_dir = persistence_dir
         self.embedding_model = GoogleGenerativeAIEmbeddings(
             model="models/embedding-001",

@@ -24,21 +24,24 @@ function App() {
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
   const wsUrl = `${protocol}//${window.location.host}/api/ws`;
 
-  const { logs, currentSlideCode, sendMessage, sendCommand, isConnected } = useAgentWebSocket(wsUrl, threadId);
+  const { logs, dialogue, currentSlideCode, sendMessage, sendCommand, isConnected } = useAgentWebSocket(wsUrl, threadId);
 
   return (
     <div className="flex h-screen w-screen bg-cyber-dark text-cyber-text overflow-hidden font-sans">
 
       {/* Left Panel: Communication & Control (30%) */}
-      <div className="w-[30%] flex flex-col border-r border-cyber-border z-10 shadow-xl">
-        <ChatPanel
-          onSendMessage={sendMessage}
-          onSendCommand={sendCommand}
-          isConnected={isConnected}
-          logs={logs}
-          threadId={threadId}
-          onNewSession={handleNewSession}
-        />
+      <div className="w-[30%] flex flex-col border-r border-cyber-border z-10 shadow-xl h-full">
+        <div className="flex-1 min-h-0 overflow-hidden">
+          <ChatPanel
+            onSendMessage={sendMessage}
+            onSendCommand={sendCommand}
+            isConnected={isConnected}
+            logs={logs}
+            dialogue={dialogue || []} // Pass dialogue state
+            threadId={threadId}
+            onNewSession={handleNewSession}
+          />
+        </div>
         <Terminal logs={logs} />
       </div>
 
@@ -52,7 +55,7 @@ function App() {
           📂 OPEN ARTIFACT VIEWER
         </button>
 
-        {showArtifacts && <ArtifactViewer onClose={() => setShowArtifacts(false)} />}
+        {showArtifacts && <ArtifactViewer onClose={() => setShowArtifacts(false)} threadId={threadId} />}
 
         <SlidePreview code={currentSlideCode} />
       </div>

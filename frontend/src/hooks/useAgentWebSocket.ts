@@ -5,17 +5,18 @@ type LogMessage = {
     content: string;
 };
 
-type SlideUpdate = {
-    type: 'slide_update';
-    code: string;
-    version?: number;
+type AgentMessage = {
+    type: 'agent_message';
+    sender: string;
+    content: string;
 };
 
-type WebSocketMessage = LogMessage | SlideUpdate;
+type WebSocketMessage = LogMessage | SlideUpdate | AgentMessage;
 
 export function useAgentWebSocket(url: string, threadId: string) {
     const ws = useRef<WebSocket | null>(null);
     const [logs, setLogs] = useState<string[]>([]);
+    const [dialogue, setDialogue] = useState<AgentMessage[]>([]); // New State
     const [currentSlideCode, setCurrentSlideCode] = useState<string | null>(null);
     const [isConnected, setIsConnected] = useState(false);
 
@@ -42,6 +43,11 @@ export function useAgentWebSocket(url: string, threadId: string) {
                 } else if (data.type === 'slide_update') {
                     setLogs((prev) => [...prev, '[System] Hot-Reloading Slide...']);
                     setCurrentSlideCode(data.code);
+                } else if (data.type === 'agent_message') {
+                    // Start fresh dialogue flow or append
+                    setDialogue((prev) => [...prev, data]);
+                    // Also log it for transparency
+                    setLogs((prev) => [...prev, `[${data.sender}] ${data.content.substring(0, 50)}...`]);
                 }
             } catch (err) {
                 console.error('Failed to parse WS message', err);
@@ -75,5 +81,5 @@ export function useAgentWebSocket(url: string, threadId: string) {
         }
     };
 
-    return { logs, currentSlideCode, sendMessage, sendCommand, isConnected };
+    return { logs, dialogue, currentSlideCode, sendMessage, sendCommand, isConnected };
 }
