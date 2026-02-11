@@ -35,7 +35,17 @@ Stack: **Tailwind CSS**, **Framer Motion**, **Lucide React**.
 def extract_json(text):
     """Robust JSON extractor"""
     try:
-        if isinstance(text, list): text = str(text)
+        if isinstance(text, list):
+            parsed_parts = []
+            for c in text:
+                if isinstance(c, dict) and 'text' in c:
+                    parsed_parts.append(c['text'])
+                elif hasattr(c, 'text'):
+                    parsed_parts.append(c.text)
+                else:
+                    parsed_parts.append(str(c))
+            text = "".join(parsed_parts)
+            
         match = re.search(r"```json\s*(.*?)\s*```", text, re.DOTALL)
         if match: return json.loads(match.group(1))
         match = re.search(r"(\{.*\})", text, re.DOTALL)
@@ -46,7 +56,17 @@ def extract_json(text):
 
 def extract_code(text):
     """Robust Code extractor"""
-    if isinstance(text, list): text = str(text)
+    if isinstance(text, list):
+        parsed_parts = []
+        for c in text:
+            if isinstance(c, dict) and 'text' in c:
+                parsed_parts.append(c['text'])
+            elif hasattr(c, 'text'):
+                parsed_parts.append(c.text)
+            else:
+                parsed_parts.append(str(c))
+        text = "".join(parsed_parts)
+        
     match = re.search(r"```(?:tsx|jsx|javascript|typescript)?\s*(.*?)```", text, re.DOTALL)
     if match: return match.group(1).strip()
     return text.replace("```", "").strip()
@@ -56,7 +76,9 @@ def architect_node(state: AgentState, config):
     
     # Input Source
     content = state.get('storyboard', '') or state.get('shared_knowledge', '') or "No Content"
-    version = state.get('current_version', 1)
+    current_index = state.get('current_step_index', 0)
+    current_sub_idx = state.get('current_sub_step_index', 0)
+    version = state.get('iteration_count', 0)
     
     # Critique Handling
     critique = state.get('critique_feedback', '')
@@ -103,6 +125,12 @@ def architect_node(state: AgentState, config):
         Title: {slide['title']}
         Points: {slide['key_points']}
         
+        **STRICT TECHNICAL GUIDELINE:**
+        - DO NOT use literal string escape characters like `\\n` or `\\t` in the code output.
+        - Output actual newlines.
+        - Use standard JSX syntax.
+        - Ensure all icons used are from the available Lucide list: [ArrowRight, ArrowLeft, Check, Star, BarChart, BarChart3, PieChart, Activity, Globe, Shield, Terminal, Cpu, Zap, Layers, FileText, User, ArrowUpRight, ShieldCheck, Database].
+        
         **Requirement:**
         - Create a verifiable `const Slide{i+1} = () => {{ ... }}` component.
         - **KOREAN TEXT ONLY**.
@@ -115,8 +143,8 @@ def architect_node(state: AgentState, config):
         """
         
         try:
-            # Use Pro for coding
-            code_res = llm_pro.invoke([
+            # Use Flash for coding (Cost Optimized)
+            code_res = llm_flash.invoke([
                 SystemMessage(content=SYSTEM_PROMPT),
                 HumanMessage(content=slide_prompt)
             ])
@@ -133,9 +161,9 @@ def architect_node(state: AgentState, config):
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  ArrowRight, ArrowLeft, Check, Star, BarChart, 
+  ArrowRight, ArrowLeft, Check, Star, BarChart, BarChart3, 
   PieChart, Activity, Globe, Shield, Terminal, 
-  Cpu, Zap, Layers, FileText, User
+  Cpu, Zap, Layers, FileText, User, ArrowUpRight, ShieldCheck, Database
 } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RcTooltip, Legend, ResponsiveContainer } from 'recharts';
 """
@@ -207,10 +235,19 @@ export default function Presentation() {
     
     # Combine Everything
     full_code = imports + "\n\n" + "\n\n".join(slide_components) + "\n\n" + main_component_start + slide_array_str + main_render
+    
+    # 🕵️ FINAL CLEANUP: Remove ANY string literal escaping artifacts
+    # Gemini 3 Flash sometimes outputs code as a literal string block with \n, \t, etc.
+    # We recursively replace until no more literal escapes exist.
+    prev_code = ""
+    while full_code != prev_code:
+        prev_code = full_code
+        full_code = full_code.replace("\\n", "\n").replace("\\t", "  ").replace("\\\\n", "\n").replace("\\'", "'").replace('\\"', '"')
 
     # Save Artifact
     from app.utils import save_artifact
-    save_artifact(f"slide_v{version}", full_code, "tsx", thread_id=thread_id)
+    filename = f"Step{current_index+1}_Sub{current_sub_idx+1}_Slide_v{version+1}"
+    save_artifact(filename, full_code, "tsx", thread_id=thread_id)
             
     return {
         "slide_code": {1: full_code}, 

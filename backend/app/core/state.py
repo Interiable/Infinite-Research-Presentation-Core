@@ -44,3 +44,13 @@ class AgentState(TypedDict):
     # Structured Planning
     plan: List[Dict[str, Any]] # List of PlanSteps
     current_step_index: int    # Pointer to current step
+    
+    # Hierarchical Planning (Recursive)
+    sub_plan: List[Dict[str, Any]] # Breaking down the current step
+    current_sub_step_index: int
+    
+    # Persistent Results (v3.4 Recursive Synthesis)
+    incremental_report_path: str # Path to the growing master report in 'results' folder
+    
+    # Collaborative Retrieval (v3.5)
+    collaboration_start_time: Optional[float] # Timestamp when first requested

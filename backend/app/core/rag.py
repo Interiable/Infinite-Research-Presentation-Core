@@ -8,7 +8,7 @@ from langchain_core.documents import Document
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 # Loaders
-from langchain_community.document_loaders import TextLoader, PyPDFLoader, DirectoryLoader
+from langchain_community.document_loaders import TextLoader, PDFMinerLoader, DirectoryLoader
 
 class VectorStoreManager:
     def __init__(self, persistence_dir: str = None):
@@ -18,7 +18,7 @@ class VectorStoreManager:
             persistence_dir = os.path.join(base_dir, "data", "chroma_db")
         self.persistence_dir = persistence_dir
         self.embedding_model = GoogleGenerativeAIEmbeddings(
-            model="models/embedding-001",
+            model="models/gemini-embedding-001",  # Updated model name
             google_api_key=os.getenv("GOOGLE_API_KEY"),
             task_type="retrieval_document"
         )
@@ -29,10 +29,10 @@ class VectorStoreManager:
             collection_name="research_vectors"
         )
         
-        # Splitters
+        # Splitters - ENHANCED: Larger chunks for more context preservation
         self.text_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=1000,
-            chunk_overlap=200,
+            chunk_size=2000,      # Increased from 1000 for more complete passages
+            chunk_overlap=400,    # Increased from 200 for better continuity
             separators=["\n\n", "\n", " ", ""]
         )
 
@@ -46,6 +46,7 @@ class VectorStoreManager:
             
         print(f"📚 RAG: Ingesting directory {directory_path}...")
         
+        processed_chunk_count = 0
         documents = []
         supported_exts = ['.md', '.txt', '.py', '.js', '.ts', '.tsx', '.json', '.html', '.css', '.pdf']
         
@@ -61,33 +62,40 @@ class VectorStoreManager:
                     file_path = os.path.join(root, file)
                     try:
                         if ext == '.pdf':
-                            loader = PyPDFLoader(file_path)
-                            documents.extend(loader.load())
+                            # --- v3.9 Pre-emptive PDF Repair ---
+                            from app.utils.pdf_repair import repair_pdf
+                            repair_pdf(file_path) # Fix hex/font errors at the source
+                            
+                            loader = PDFMinerLoader(file_path)
+                            current_docs = loader.load()
                         else:
                             # Generic text loader
                             loader = TextLoader(file_path, encoding='utf-8', autodetect_encoding=True)
-                            documents.extend(loader.load())
+                            current_docs = loader.load()
+                            
+                        documents.extend(current_docs)
+                        
+                        # --- BATCH PROCESSING (Fix OOM) ---
+                        if len(documents) >= 10: # Process every 10 documents
+                            print(f"✂️  RAG: Splitting & Indexing batch of {len(documents)} documents...")
+                            chunks = self.text_splitter.split_documents(documents)
+                            if chunks:
+                                self.vector_store.add_documents(chunks)
+                                processed_chunk_count += len(chunks)
+                            documents = [] # Free memory
+                            
                     except Exception as e:
                         print(f"⚠️ Failed to load {file}: {e}")
         
-        if not documents:
-            return "No valid documents found to index."
-            
-        # Chunking
-        print(f"✂️  RAG: Splitting {len(documents)} documents...")
-        chunks = self.text_splitter.split_documents(documents)
+        # Process remaining documents
+        if documents:
+            print(f"✂️  RAG: Splitting & Indexing final batch of {len(documents)} documents...")
+            chunks = self.text_splitter.split_documents(documents)
+            if chunks:
+                self.vector_store.add_documents(chunks)
+                processed_chunk_count += len(chunks)
         
-        if not chunks:
-            return "No content chunks generated."
-
-        # Add to Vector Store
-        # Chroma handles upserting usually, but for simplicity we just add. 
-        # Ideally we'd check for duplicates, but for MVP we might just clear or append.
-        # Here we append.
-        print(f"💾 RAG: Embedding & Storing {len(chunks)} chunks...")
-        self.vector_store.add_documents(chunks)
-        
-        return f"Successfully indexed {len(chunks)} chunks from {directory_path}."
+        return f"Successfully indexed {processed_chunk_count} chunks from {directory_path}."
 
     def similarity_search(self, query: str, k: int = 5) -> str:
         """

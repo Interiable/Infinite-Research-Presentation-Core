@@ -7,11 +7,16 @@ import threading
 def run_share():
     print("🚀 Starting Infinite Research Agent System (Mobile Access Mode)...")
 
-    # 1. Start the System (Backend + Frontend)
-    # We run run_system.py as a subprocess, but run_system.py blocks, so we need to run it or just replicate valid start logic.
-    # Replicating logic is safer to avoid nesting loop issues.
+    # 0. Start the Local LLM Server (llama.cpp)
+    print("🧠 Starting Local LLM Server (LLaMA 4 Scout)...")
+    llm_process = subprocess.Popen(["bash", "scripts/run_llama_server.sh"], 
+                                 stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
     
-    # Actually, simpler: Start run_system.py in a thread or separate process
+    # Wait for server to be ready
+    print("⏳ Waiting for LLM server to load (this may take a minute for 60GB model)...")
+    time.sleep(2) # Brief pause to allow process to start
+
+    # 1. Start the System (Backend + Frontend)
     system_process = subprocess.Popen([sys.executable, "run_system.py"])
     
     print("⏳ Waiting for system to initialize (10s)...")

@@ -93,22 +93,13 @@ export const SlidePreview: React.FC<SlidePreviewProps> = ({ code }) => {
 
         const cleanLines = lines.filter(line => {
             const trimmed = line.trim();
-            // Start of import
             if (trimmed.startsWith('import ') || trimmed.startsWith('import{')) {
-                // Single line import
-                if (trimmed.includes('from') && trimmed.includes(';')) {
-                    return false;
-                }
-                // Multi-line import start
+                if (trimmed.includes('from') && trimmed.includes(';')) return false;
                 insideImport = true;
                 return false;
             }
-            // Inside multi-line import
             if (insideImport) {
-                // End of import
-                if (trimmed.includes('from') && trimmed.includes(';')) {
-                    insideImport = false;
-                }
+                if (trimmed.includes('from') && trimmed.includes(';')) insideImport = false;
                 return false;
             }
             return true;
@@ -116,31 +107,33 @@ export const SlidePreview: React.FC<SlidePreviewProps> = ({ code }) => {
 
         let cleanCode = cleanLines.join('\n');
 
-        // 2. Detect the exported component name
-        let componentName = "Presentation"; // Default
+        // 2. Detect the exported component name (Greedy check for the first one)
+        let componentName = "Presentation"; // Default fallback
 
-        // PRIORITIZE: export default function Name() {...}
-        // We must check this FIRST because the generic regex below matches "export default function" treating "function" as the name.
-        const namedExportMatch = cleanCode.match(/export\s+default\s+function\s+(\w+)/);
-        if (namedExportMatch) {
-            componentName = namedExportMatch[1];
-            cleanCode = cleanCode.replace(/export\s+default\s+function/, 'function');
-        } else {
-            // Case B: export default Name; (Only run if Case A didn't match)
-            const defaultExportMatch = cleanCode.match(/export\s+default\s+(\w+);?/);
-            if (defaultExportMatch) {
-                componentName = defaultExportMatch[1];
-                cleanCode = cleanCode.replace(defaultExportMatch[0], ''); // Remove the export line
-            }
+        // Regex to match "export default function Name" or "export default Name"
+        const defaultFuncMatch = cleanCode.match(/export\s+default\s+function\s+(\w+)/);
+        const defaultVarMatch = cleanCode.match(/export\s+default\s+(\w+)/);
+
+        if (defaultFuncMatch) {
+            componentName = defaultFuncMatch[1];
+        } else if (defaultVarMatch) {
+            componentName = defaultVarMatch[1];
         }
 
-        // 3. Append render
+        // 3. Global Cleanup of Export Keywords to prevent "exports is not defined"
+        // Replace "export default" with nothing (turning "export default Slide1;" into "Slide1;")
+        cleanCode = cleanCode.replace(/export\s+default\s+/g, '');
+
+        // Replace named exports "export const" -> "const"
+        cleanCode = cleanCode.replace(/^\s*export\s+/gm, '');
+
+        // 4. Append render
         cleanCode += `\nrender(<${componentName} />);`;
 
         return cleanCode;
     };
 
-    const finalCode = transformCode(code);
+    const finalCode = transformCode(code || "");
 
     return (
         <div className="flex flex-col h-full bg-black relative overflow-hidden">

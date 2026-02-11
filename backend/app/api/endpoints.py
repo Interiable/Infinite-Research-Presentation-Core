@@ -1,4 +1,5 @@
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, HTTPException
+from fastapi.responses import FileResponse
 from typing import Dict, List
 import json
 import asyncio
@@ -7,10 +8,11 @@ import signal
 import threading
 import time
 import sqlite3
+import re
 
 from app.api.schemas import ChatInput, ChatOutput
 from app.api.schemas import ChatInput, ChatOutput
-# from app.core.graph import graph # REMOVED: Static import causes initialization issues
+import app.core.graph as graph_module
 from langchain_core.messages import HumanMessage
 
 router = APIRouter()
@@ -101,11 +103,12 @@ async def get_folders():
 @router.get("/artifacts")
 async def list_artifacts(thread_id: str = None):
     """
-    Lists all slide artifacts (.tsx) in the backend/artifacts directory.
-    If thread_id is provided, also scans artifacts/{thread_id}/.
+    Lists all slide artifacts (.tsx) in backend/artifacts AND backend/results.
+    If thread_id is provided, also scans artifacts/{thread_id}/ and results/{thread_id}/.
     """
     base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     artifacts_root = os.path.join(base_dir, "artifacts")
+    results_root = os.path.join(base_dir, "results")
     
     files = []
     
@@ -118,27 +121,25 @@ async def list_artifacts(thread_id: str = None):
                     found.append(f)
         return found
 
-    # 1. Scan Root (Legacy/Shared)
+    # 1. Scan Root Artifacts
     files.extend(scan_dir(artifacts_root))
     
-    # 2. Scan Thread Subdir
+    # 2. Scan Root Results
+    files.extend(scan_dir(results_root))
+    
+    # 3. Scan Thread Subdirs
     if thread_id:
         safe_thread_id = "".join([c for c in thread_id if c.isalnum() or c in ('-', '_')])
-        thread_dir = os.path.join(artifacts_root, safe_thread_id)
-        thread_files = scan_dir(thread_dir)
-        # Mark them or just add them? 
-        # For simplicity, we just add them. Use a set to avoid dupes if filename same?
-        # Actually file paths are different. The frontend just asks for filename.
-        # We need a way to tell read_artifact WHERE to look.
-        # We will prefix filename with 'thread_id/'?? 
-        # No, that might break frontend.
-        # Let's simple return list. read_artifact will try both.
-        files.extend(thread_files)
+        
+        # Artifacts/{thread_id}
+        thread_art_dir = os.path.join(artifacts_root, safe_thread_id)
+        files.extend(scan_dir(thread_art_dir))
+        
+        # Results/{thread_id}
+        thread_res_dir = os.path.join(results_root, safe_thread_id)
+        files.extend(scan_dir(thread_res_dir))
 
     # Sort by creation time (approximation or just name)
-    # Sorting mixed dirs is hard without full paths.
-    # Let's just return unique names. If same name exists in both, thread one takes precedence?
-    # Simple dedupe
     files = list(set(files))
     files.sort(reverse=True) # Timestamp prefix usually handles sort
     return {"files": files}
@@ -148,24 +149,37 @@ async def read_artifact(filename: str, thread_id: str = None):
     """
     Reads the content of a specific artifact.
     Prioritizes artifacts/{thread_id}/{filename} if it exists.
+    Also checks results/ and results/{thread_id}/.
     """
     base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     artifacts_root = os.path.join(base_dir, "artifacts")
+    results_root = os.path.join(base_dir, "results")
     
     target_path = None
     
-    # 1. Try Thread Dir
+    # 1. Try Thread Dir (Artifacts)
     if thread_id:
         safe_thread_id = "".join([c for c in thread_id if c.isalnum() or c in ('-', '_')])
-        thread_path = os.path.join(artifacts_root, safe_thread_id, filename)
-        if os.path.exists(thread_path):
-            target_path = thread_path
+        
+        # Check artifacts/{thread_id}
+        p = os.path.join(artifacts_root, safe_thread_id, filename)
+        if os.path.exists(p): target_path = p
+        
+        # Check results/{thread_id} (New)
+        if not target_path:
+            p = os.path.join(results_root, safe_thread_id, filename)
+            if os.path.exists(p): target_path = p
             
-    # 2. Fallback to Root
+    # 2. Fallback to Roots
     if not target_path:
-        root_path = os.path.join(artifacts_root, filename)
-        if os.path.exists(root_path):
-            target_path = root_path
+        # Check artifacts/
+        p = os.path.join(artifacts_root, filename)
+        if os.path.exists(p): target_path = p
+        
+        # Check results/
+        if not target_path:
+            p = os.path.join(results_root, filename)
+            if os.path.exists(p): target_path = p
             
     if not target_path:
         return {"error": "File not found"}
@@ -182,6 +196,7 @@ async def get_threads():
     """
     Returns a list of unique thread_ids stored in the SQLite DB.
     """
+    import sqlite3
     # Resolve absolute path
     base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     db_path = os.path.join(base_dir, "data", "checkpoints.sqlite")
@@ -191,21 +206,141 @@ async def get_threads():
     try:
         conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
-        # LangGraph stores thread_id in JSON encoded metadata or config typically. 
-        # But correct generic schema usually has thread_id column in checkpoints table.
-        # Let's target the 'checkpoints' table.
         cursor.execute("SELECT DISTINCT thread_id FROM checkpoints ORDER BY checkpoint_id DESC")
         threads = [row[0] for row in cursor.fetchall()]
         conn.close()
         return {"threads": threads}
     except Exception as e:
         print(f"Error fetching threads: {e}")
-        return {"threads": ["current_session"]} # Fallback
+        return {"threads": []}
 
-# Import module to access the global 'graph' variable which is initialized at startup
-import app.core.graph as graph_module
+@router.post("/artifacts/export-pdf")
+async def export_pdf(payload: dict):
+    """
+    Exports a clean PDF version of the artifact.
+    Removes citation markers and other artifacts.
+    """
+    filename = payload.get("filename")
+    thread_id = payload.get("thread_id")
+    
+    if not filename:
+        raise HTTPException(status_code=400, detail="Filename required")
+        
+    # Logic to find file
+    base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    artifacts_root = os.path.join(base_dir, "artifacts")
+    results_root = os.path.join(base_dir, "results")
+    target_path = None
+    
+    if thread_id:
+        safe_thread_id = "".join([c for c in thread_id if c.isalnum() or c in ('-', '_')])
+        
+        # Check artifacts/{thread_id}
+        p = os.path.join(artifacts_root, safe_thread_id, filename)
+        if os.path.exists(p): target_path = p
+        
+        # Check results/{thread_id}
+        if not target_path:
+            p = os.path.join(results_root, safe_thread_id, filename)
+            if os.path.exists(p): target_path = p
+            
+    if not target_path:
+        # Check artifacts/
+        p = os.path.join(artifacts_root, filename)
+        if os.path.exists(p): target_path = p
 
-# ... (ConnectionManager and previous endpoints remain same)
+        # Check results/
+        if not target_path:
+            p = os.path.join(results_root, filename)
+            if os.path.exists(p): target_path = p
+            
+    if not target_path:
+        raise HTTPException(status_code=404, detail="File not found")
+        
+    # Read & Clean
+    with open(target_path, "r", encoding="utf-8") as f:
+        content = f.read()
+
+    # --- Advanced Content Parsing ---
+    # The file may contain mixed Markdown and Python string representations of lists/dicts.
+    # Pattern: [{'type': 'text', ... }]
+    # We use regex to find these blocks and ast.literal_eval to safely parse them and extract 'text'.
+    
+    import ast
+
+    def parse_block(match):
+        try:
+            # literal_eval safely evaluates a string containing a Python literal
+            data = ast.literal_eval(match.group(0))
+            if isinstance(data, list) and len(data) > 0 and isinstance(data[0], dict):
+                # Extract text and unescape if needed (though literal_eval handles standard escapes)
+                return data[0].get('text', '')
+            elif isinstance(data, dict):
+                 return data.get('text', '')
+        except Exception as e:
+            print(f"⚠️ Parsing failed for block: {e}")
+            return match.group(0) # Return original if parse fails
+        return match.group(0)
+
+    # Regex to find the blocks: starts with [{ or { followed by 'type': 'text'
+    # We use DOTALL to match across newlines.
+    # We match roughly things looking like python structures.
+    # Pattern explanation: 
+    # \[?\s*\{  -> Optional [ then {
+    # .*?       -> Content
+    # \}\s*\]?  -> } then Optional ]
+    # But specifically anchoring on 'type': 'text' to avoid false positives
+    
+    # Robust pattern for the specific artifact format seen:
+    # [{'type': 'text', ... }]
+    pattern = r"\[\s*\{'type':\s*'text'.*?\}\s*\]"
+    
+    content = re.sub(pattern, parse_block, content, flags=re.DOTALL)
+    
+    # Fallback for simple dicts not in list: {'type': 'text'...}
+    # Be careful not to double replace if regex above caught it (it expects brackets)
+    # If the file uses bare dicts, we might need another pass or adjusted regex.
+    # The artifact sample showed list wrapping.
+    
+    # Final cleanup of common escape artifacts if still present
+    if "\\n" in content:
+        content = content.replace("\\n", "\n").replace("\\t", "  ")
+        
+    # Regex Cleaning (Citations)
+        
+    # Regex Cleaning (Citations)
+    # Remove [1], [doc.pdf], Refs: ...
+    content = re.sub(r'\[\d+\]', '', content)
+    content = re.sub(r'\[.*?\.pdf\]', '', content, flags=re.IGNORECASE)
+    content = re.sub(r'\[source:.*?\]', '', content, flags=re.IGNORECASE)
+    content = re.sub(r'Refs: \d+ files\.\.\.', '', content)
+    
+    # Convert using existing utility
+    from app.utils import convert_to_pdf
+    # Temp file
+    temp_pdf_path = target_path.replace(".md", "_clean.pdf")
+    # Temp MD
+    temp_md_path = target_path.replace(".md", "_clean_temp.md")
+    
+    try:
+        with open(temp_md_path, "w", encoding="utf-8") as f:
+            f.write(content)
+            
+        success = convert_to_pdf(temp_md_path, temp_pdf_path)
+        
+        if success and os.path.exists(temp_pdf_path):
+            return FileResponse(temp_pdf_path, filename=f"Clean_{filename.replace('.md', '.pdf')}")
+        else:
+            raise HTTPException(status_code=500, detail="PDF Generation Failed in Utility")
+            
+    except Exception as e:
+         print(f"PDF Export Error: {e}")
+         raise HTTPException(status_code=500, detail=str(e))
+    finally:
+         # Cleanup Temp MD
+         if os.path.exists(temp_md_path):
+             try: os.remove(temp_md_path)
+             except: pass
 
 @router.post("/chat", response_model=ChatOutput)
 async def chat_endpoint(payload: ChatInput):
@@ -270,6 +405,7 @@ async def websocket_endpoint(websocket: WebSocket, client_id: str):
         while True:
             # ... (WebSocket loop same as before)
             raw_data = await websocket.receive_text()
+            print(f"DEBUG: WS Received: {raw_data}")
             
             try:
                 message_obj = json.loads(raw_data)
@@ -376,14 +512,11 @@ async def run_graph_execution(client_id: str, user_input: str):
                         if len(display_content) > 150:
                             display_content = display_content[:150] + "... (Click Artifacts to view full report)"
                             
-                        print(f"DEBUG: Broadcasting Agent Message from {data['sender']}")
                         await manager.broadcast(json.dumps({
                             "type": "agent_message",
                             "sender": data['sender'],
                             "content": display_content
                         }), client_id)
-                    else:
-                        print(f"DEBUG: Event ignored (No Sender): Keys: {list(data.keys())} | Kind: {kind}")
 
     except asyncio.CancelledError:
         print(f"Task for {client_id} was cancelled.")

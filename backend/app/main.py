@@ -5,6 +5,24 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+# --- v3.9 Global Logging & Warning Suppressor ---
+import logging
+import warnings
+
+# 1. Suppress Python Warnings (Catch-all for pypdf/pdfminer non-critical issues)
+warnings.filterwarnings("ignore")
+
+# 2. Suppress pypdf loggers (all sub-modules)
+logging.getLogger("pypdf").setLevel(logging.ERROR)
+
+# 3. Suppress pdfminer loggers (very chatty during font descriptor parsing)
+logging.getLogger("pdfminer").setLevel(logging.ERROR)
+
+# Additional aggressive suppression for specific sub-modules if they bypass the parent
+logging.getLogger("pdfminer.pdfinterp").setLevel(logging.ERROR)
+logging.getLogger("pdfminer.pdfpage").setLevel(logging.ERROR)
+logging.getLogger("pdfminer.pdfdevice").setLevel(logging.ERROR)
+
 from contextlib import asynccontextmanager
 
 @asynccontextmanager

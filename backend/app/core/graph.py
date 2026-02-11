@@ -9,6 +9,9 @@ from app.agents.architect import architect_node
 
 from app.agents.planner import planner_node
 from app.agents.deep_researcher import deep_researcher_node
+from app.agents.finalizer import finalizer_node
+from app.agents.plan_refiner import plan_refiner_node
+from app.agents.warden import warden_node
 
 # Define the graph
 workflow = StateGraph(AgentState)
@@ -19,7 +22,10 @@ workflow.add_node("RESEARCHER", researcher_node)
 workflow.add_node("DEEP_RESEARCHER", deep_researcher_node)
 workflow.add_node("ARCHIVIST", archivist_node)
 workflow.add_node("ARCHITECT", architect_node)
-workflow.add_node("PLANNER", planner_node) # New Node
+workflow.add_node("PLANNER", planner_node) 
+workflow.add_node("FINALIZER", finalizer_node)
+workflow.add_node("PLAN_REFINER", plan_refiner_node)
+workflow.add_node("WARDEN", warden_node)
 
 # Define Logic for Routing
 def router(state: AgentState):
@@ -39,6 +45,12 @@ def router(state: AgentState):
         return "ARCHITECT"
     elif next_node == "PLANNER":
         return "PLANNER"
+    elif next_node == "WARDEN":
+        return "WARDEN"
+    elif next_node == "PLAN_REFINER":
+        return "PLAN_REFINER"
+    elif next_node == "FINALIZER":
+        return "FINALIZER"
     elif next_node == "END":
         return END
     else:
@@ -54,6 +66,8 @@ workflow.add_edge("DEEP_RESEARCHER", "SUPERVISOR")
 workflow.add_edge("ARCHIVIST", "SUPERVISOR")
 workflow.add_edge("ARCHITECT", "SUPERVISOR")
 workflow.add_edge("PLANNER", "SUPERVISOR") # Planner reports back plan
+workflow.add_edge("PLAN_REFINER", "SUPERVISOR") # Sub-planner reports back
+workflow.add_edge("WARDEN", "SUPERVISOR") # Warden reports back brief
 
 # Conditional Edge from Supervisor
 workflow.add_conditional_edges(
@@ -65,8 +79,11 @@ workflow.add_conditional_edges(
         "ARCHIVIST": "ARCHIVIST",
         "ARCHITECT": "ARCHITECT",
         "PLANNER": "PLANNER",
+        "WARDEN": "WARDEN",
+        "PLAN_REFINER": "PLAN_REFINER",
+        "FINALIZER": "FINALIZER",
         "SUPERVISOR": "SUPERVISOR",
-        END: END
+        "END": END
     }
 )
 

@@ -1,4 +1,4 @@
-# 🌌 Gravity AI Agent v3.1 (Ultimate Edition - Qwen3 Powered)
+# 🌌 Gravity AI Agent v3.2 (Ultimate Plus - LLaMA 4 Scout Powered)
 
 **"Hybrid Intelligence, Absolute Quality."**
 
@@ -12,10 +12,11 @@ This is an advanced, autonomous AI Agent system designed to function as a comple
 The system uses a tiered intelligence strategy to ensure zero downtime and maximum quality:
 1.  **Primary**: **Gemini 3 Pro** (High Reasoning, Polyglot).
 2.  **Secondary**: **OpenAI GPT-5.2** (High Quality Fallback). If Gemini hits a quota limit (429), the system *instantly* switches to GPT-5.2 while preserving the entire conversation context.
-3.  **Local LLM**: **Qwen3-32B (Dense)** running via Ollama.
-    -   **Why?**: Selected for **maximum reasoning consistency** and instruction-following capability.
-    -   **Specs**: 32B parameters (Dense), 20GB VRAM usage. Fits comfortably on RTX 5090.
-    -   **Trade-off**: Slightly slower than MoE, but provides deeper, more stable analysis.
+3.  **Local LLM**: **LLaMA 4 Scout (17B-16E MoE)** running via **llama.cpp**.
+    -   **Why?**: Combines the depth of a **107B parameter** knowledge base with the speed of a **17B** inference engine.
+    -   **Specs**: 107B Total Params, 16 Experts. 
+    -   **Optimization**: Uses **MoE CPU Offloading** to fit massive intelligence into the RTX 5090 (only 12GB VRAM needed).
+    -   **Intelligence**: Provides reasoning consistency comparable to 100B+ class models, far exceeding standard 30B dense models.
 
 ### 2. 🧠 Strict Librarian & North Star Protocol ("The Anti-Drift System")
 -   **Strict Librarian**: The Planner filters and selects only relevant files (`.pdf`, `.txt`, `.md`, **`.docx`**) from the `data/` folder and connected repositories.
@@ -43,7 +44,7 @@ Builds complex React applications (Slides/Dashboards) component by component:
 | :--- | :--- | :--- | :--- |
 | **Planner** | Strategist | Gemini 3 Pro | **Context Filtering** (Strict Librarian) |
 | **Supervisor** | Gatekeeper | Polyglot (Pro/GPT) | **Quality Control** (Intervenes @ 10 failures) |
-| **Researcher** | Writer | **Qwen3-32B (Dense)** | **Recursive Drafting** (Deep Read + Timer) |
+| **Researcher** | Writer | **LLaMA 4 Scout** | **MoE Reasoning** (107B Knowledge, Deep Read) |
 | **Architect** | Developer | Gemini 3 Pro | **Iterative Coding** (React/Lucide) |
 
 ---
@@ -53,8 +54,8 @@ Builds complex React applications (Slides/Dashboards) component by component:
 ### Prerequisites
 -   Python 3.10+
 -   Node.js 18+
--   **Ollama** running locally with `qwen3:32b`
--   **Hardware**: RTX 5090 Recommended for full performance (20GB VRAM required)
+-   **llama.cpp** built with CUDA support (`GGML_CUDA=ON`)
+-   **Hardware**: RTX 5090 Recommended (Handles the 107B model with MoE CPU offloading)
 -   API Keys: `GOOGLE_API_KEY`, `OPENAI_API_KEY` (Optional fallback)
 
 ### 1. Setup Environment
@@ -79,7 +80,7 @@ OPENAI_API_KEY=sk-proj...
 # Comma-separated absolute paths to your research data/code
 LOCAL_RESEARCH_DIR=/home/user/data,/home/user/projects/robot_code
 # Local Model Selection
-LOCAL_LLM_MODEL=qwen3:32b
+LOCAL_LLM_MODEL=llama4-scout
 ```
 
 ### 3. Prepare Data

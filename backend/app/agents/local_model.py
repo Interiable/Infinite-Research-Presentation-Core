@@ -1,14 +1,12 @@
 import os
-from langchain_ollama import ChatOllama
+from langchain_openai import ChatOpenAI
 
-# Centralized Local LLM Definition
-# This allows us to easily switch the local model or config globally.
-# User should ensure Ollama is running with this model.
+# Centralized Local LLM Definition (llama.cpp)
+MODEL_NAME = os.getenv("LOCAL_LLM_MODEL", "llama4-scout") 
 
-MODEL_NAME = os.getenv("LOCAL_LLM_MODEL", "llama4") 
-
-local_llm = ChatOllama(
+local_llm = ChatOpenAI(
     model=MODEL_NAME,   
     temperature=0.1,
-    keep_alive="5m"      # Keep model in VRAM for 5 mins to speed up sequential agent steps
+    base_url="http://localhost:8080/v1",
+    api_key="sk-no-key-required"
 )

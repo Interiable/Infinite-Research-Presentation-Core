@@ -4,7 +4,7 @@ import json
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.messages import SystemMessage, HumanMessage
 from app.core.state import AgentState
-from app.utils import RobustGemini
+from app.utils import RobustGemini, save_artifact
 
 # Using Robust Model for Planning (Critical Step)
 # Using Robust Model for Planning (Critical Step)
@@ -23,31 +23,45 @@ Your goal is to:
 **STRICT PLANNING RULES:**
 1.  **NO SHORTCUTS**: Do NOT create a simple 3-step plan unless the task is trivial.
 2.  **Adaptive Granularity**: Create as many steps as necessary (2-3 for simple, 10+ for complex).
-3.  **Relevance is Key**: Only select files that directly support the user's current specific goal.
+3.  **Recursive Deliberation**: Explicitly state that each step will be further refined into a "Sub-Plan" (3-5 granular sub-steps) before execution.
+4.  **Web Research Priority**: If the local library is insufficient or specialized terms (like DMP, LMA, ToM) need grounding, prioritize `DEEP_RESEARCHER` for web-searching.
+5.  **Relevance is Key**: Only select files that directly support the user's current specific goal.
+6.  **NO SLIDES UNLESS EXPLICITLY REQUESTED**: ONLY use 'ARCHITECT' if the user explicitly asks for "slides", "presentation", "PPT", "슬라이드", or "발표자료". For text/report tasks, use ONLY 'RESEARCHER' or 'DEEP_RESEARCHER'.
+
+**LANGUAGE RULES (STRICT):**
+1.  **REASONING & DESCRIPTIONS MUST BE IN KOREAN**. 
+2.  Titles can be English or Korean.
 
 **OUTPUT FORMAT:**
 You must output PURE JSON in the following format:
 {
-  "relevant_files_reasoning": "I selected X and Y because...",
-  "selected_files": ["path/to/relevant_doc.pdf", "path/to/code.py"],
+  "relevant_files_reasoning": "선정 이유 및 분석 결과 (한국어로 작성)...",
+  "selected_files": ["path/to/relevant_doc.pdf"],
   "steps": [
     {
       "id": "step_1",
-      "title": "Deep Technical Investigation",
-      "description": "Perform deep research on X using the specialized engine...",
-      "assigned_to": "DEEP_RESEARCHER",
+      "title": "단계 제목 (Korean/English)",
+      "description": "수행할 작업에 대한 상세 설명 (한국어로 작성)...",
+      "assigned_to": "RESEARCHER",
       "status": "pending"
     }
   ]
 }
 NOTE: 'assigned_to' must be one of: 'RESEARCHER', 'ARCHITECT', 'DEEP_RESEARCHER'.
-Use 'DEEP_RESEARCHER' ONLY for tasks requiring intensive technical investigation or additional data searching.
+- Use 'RESEARCHER' for ALL writing, drafting, analysis, and report generation tasks. 
+- Use 'DEEP_RESEARCHER' ONLY for "Investigation", "Data Gathering", or "Web Search" steps. DO NOT assign "Drafting" or "Writing" to Deep Researcher.
+- Use 'ARCHITECT' ONLY when user explicitly requests slides/presentations.
 """
 
-def planner_node(state: AgentState):
+from langchain_core.runnables import RunnableConfig
+
+def planner_node(state: AgentState, config: RunnableConfig):
     """
     Generates the initial project plan.
     """
+    # Extract Thread ID for Artifact Isolation
+    thread_id = config.get("configurable", {}).get("thread_id", "default")
+    
     messages = state['messages']
     
     # Extract the latest human goal
@@ -75,7 +89,7 @@ def planner_node(state: AgentState):
             
     # 2. Semantic Search for "User Goal"
     # We retrieve key chunks to understand what data exists related to the request
-    search_results = rag.similarity_search(goal, k=10)
+    search_results = rag.similarity_search(goal, k=10)  # Reduced from 20 to 10 for token optimization
     
     # 3. File Overview (List of ALL files)
     file_overview = rag.get_file_overviews()
@@ -124,7 +138,7 @@ def planner_node(state: AgentState):
                     parsed_parts.append(str(c))
             content = " ".join(parsed_parts)
             
-        print(f"🔍 Planner Raw Output:\n{content}\n----------------")
+        # Noisy raw output print removed
         
         import re
         # Try to find JSON block
@@ -187,6 +201,23 @@ def planner_node(state: AgentState):
         filtered_context = local_files_context
 
     # Initialize State
+    save_artifact("Project_Master_Plan_Raw", f"# 📋 Raw Project Data\n\n{content}", "md", thread_id=thread_id)
+    
+    # Create Human-Readable Plan
+    readable_plan = f"# 📋 Project Master Plan: {goal[:100]}\n\n"
+    readable_plan += f"## 🧐 Librarian Reasoning\n{reasoning}\n\n"
+    readable_plan += "## 📚 Selected Key Files\n"
+    for f in selected_files:
+        readable_plan += f"- {f}\n"
+    
+    readable_plan += "\n## 🛠️ Execution Strategy\n"
+    for i, step in enumerate(steps):
+        readable_plan += f"### Step {i+1}: {step.get('title', 'Unknown')}\n"
+        readable_plan += f"- **Goal**: {step.get('description', '')}\n"
+        readable_plan += f"- **Agent**: {step.get('assigned_to', 'RESEARCHER')}\n\n"
+    
+    save_artifact("Project_Master_Plan", readable_plan, "md", thread_id=thread_id)
+    
     return {
         "sender": "Planner",
         "plan": steps,
