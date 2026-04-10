@@ -3,7 +3,7 @@ import { Send, MessageSquare, Power, FolderOpen, Database, PauseCircle, PlayCirc
 import { AgentDialogue } from './AgentDialogue';
 
 interface ChatProps {
-    onSendMessage: (msg: string) => void;
+    onSendMessage: (msg: string, config?: any, projectId?: string) => void;
     onSendCommand: (cmd: string) => void;
     isConnected: boolean;
     logs: string[];
@@ -22,17 +22,29 @@ export const ChatPanel: React.FC<ChatProps> = ({
     onNewSession
 }) => {
     const [input, setInput] = useState('');
+    const [currentProject, setCurrentProject] = useState(() => localStorage.getItem('agent_project_id') || 'default');
+    const [isCustomWorkspace, setIsCustomWorkspace] = useState(false);
+    const [useWebSearch, setUseWebSearch] = useState(true);
+    const [usePaperSearch, setUsePaperSearch] = useState(true);
+    const [usePatentSearch, setUsePatentSearch] = useState(true);
+    const [useMediaSearch, setUseMediaSearch] = useState(true);
+    const [projects, setProjects] = useState<string[]>([]);
     const [folders, setFolders] = useState<string[]>([]);
-    const [historyThreads, setHistoryThreads] = useState<string[]>([]);
+    const [historyThreads, setHistoryThreads] = useState<any[]>([]);
     const [commandHistory, setCommandHistory] = useState<any[]>([]);
     const [showFolders, setShowFolders] = useState(false);
     const [showHistory, setShowHistory] = useState(false);
     const logsEndRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
-        fetchFolders();
+        fetchProjects();
         fetchHistory();
     }, []);
+
+    useEffect(() => {
+        localStorage.setItem('agent_project_id', currentProject);
+        fetchFolders();
+    }, [currentProject]);
 
     // Auto-scroll logs
     useEffect(() => {
@@ -49,9 +61,19 @@ export const ChatPanel: React.FC<ChatProps> = ({
         }
     };
 
+    const fetchProjects = async () => {
+        try {
+            const res = await fetch('/api/config/projects');
+            const data = await res.json();
+            if (data.projects) setProjects(data.projects);
+        } catch (err) {
+            console.error("Failed to fetch projects", err);
+        }
+    };
+
     const fetchFolders = async () => {
         try {
-            const res = await fetch('/api/config/folders');
+            const res = await fetch(`/api/config/folders?project_id=${currentProject}`);
             const data = await res.json();
             if (data.folders) setFolders(data.folders);
         } catch (err) {
@@ -73,14 +95,14 @@ export const ChatPanel: React.FC<ChatProps> = ({
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (input.trim()) {
-            onSendMessage(input);
+            onSendMessage(input, { web: useWebSearch, academic: usePaperSearch, patent: usePatentSearch, media: useMediaSearch }, currentProject);
             setInput('');
         }
     };
 
     const handlePickFolder = async () => {
         try {
-            const res = await fetch('/api/config/pick-folder', { method: 'POST' });
+            const res = await fetch(`/api/config/pick-folder?project_id=${currentProject}`, { method: 'POST' });
             const data = await res.json();
             if (data.status === 'success') {
                 // Refresh list
@@ -89,6 +111,24 @@ export const ChatPanel: React.FC<ChatProps> = ({
             }
         } catch (err) {
             console.error("Folder pick failed", err);
+        }
+    };
+
+    const handleDeleteThread = async (id: string) => {
+        if (confirm(`정말로 이 토픽(${id})과 관련된 모든 데이터(체크포인트, 결과 보고서)를 삭제하시겠습니까?`)) {
+            try {
+                const res = await fetch(`/api/threads/${id}`, { method: 'DELETE' });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    if (id === threadId) {
+                        onNewSession();
+                    } else {
+                        await fetchHistory();
+                    }
+                }
+            } catch (err) {
+                console.error("Delete failed", err);
+            }
         }
     };
 
@@ -156,36 +196,108 @@ export const ChatPanel: React.FC<ChatProps> = ({
 
                 {/* Second Row: Session Management */}
                 <div className="flex items-center px-4 py-2 bg-black/20 justify-between">
-                    <div className="flex items-center gap-2 text-xs text-cyber-muted">
-                        <Hash size={12} />
-                        <span className="font-mono">ID: {threadId}</span>
-                        {/* Session Switcher */}
-                        <select
-                            className="bg-black/50 border border-cyber-border text-xs text-cyber-text rounded ml-2 p-1"
-                            onChange={(e) => {
-                                if (e.target.value !== threadId) {
-                                    const newId = e.target.value;
-                                    localStorage.setItem('agent_thread_id', newId);
-                                    window.location.reload();
-                                }
-                            }
-                            }
-                            value={threadId}
-                        >
-                            <option value={threadId}>Current</option>
-                            {historyThreads.map(t => (
-                                <option key={t} value={t}>{t}</option>
-                            ))}
-                        </select>
+                    <div className="flex items-center gap-2">
+                        <div className="flex items-center bg-black/40 border border-cyber-border rounded px-2 py-0.5">
+                            <span className="text-[10px] text-cyber-muted mr-1">WORKSPACE:</span>
+                            {isCustomWorkspace ? (
+                                <div className="flex items-center">
+                                    <input
+                                        autoFocus
+                                        type="text"
+                                        value={currentProject}
+                                        onChange={(e) => setCurrentProject(e.target.value)}
+                                        onKeyDown={(e) => { if (e.key === 'Enter') setIsCustomWorkspace(false); }}
+                                        className="bg-transparent text-[10px] font-mono text-neon-blue focus:outline-none w-20"
+                                        placeholder="Type & Enter"
+                                    />
+                                    <button onClick={() => { setIsCustomWorkspace(false); if(!currentProject) setCurrentProject('default'); }} className="text-red-500 hover:text-red-400 ml-1 text-xs">×</button>
+                                </div>
+                            ) : (
+                                <select
+                                    value={projects.includes(currentProject) ? currentProject : (currentProject ? currentProject : '__NEW__')}
+                                    onChange={(e) => {
+                                        if (e.target.value === '__NEW__') {
+                                            setIsCustomWorkspace(true);
+                                            setCurrentProject('');
+                                        } else {
+                                            setCurrentProject(e.target.value);
+                                        }
+                                    }}
+                                    className="bg-transparent text-[10px] font-mono text-neon-blue focus:outline-none cursor-pointer w-24 appearance-none"
+                                >
+                                    {projects.map(p => (
+                                        <option key={p} value={p} className="bg-cyber-dark text-neon-blue">{p}</option>
+                                    ))}
+                                    {!projects.includes(currentProject) && currentProject && (
+                                        <option key={currentProject} value={currentProject} className="bg-cyber-dark text-neon-blue">{currentProject}</option>
+                                    )}
+                                    <option value="__NEW__" className="bg-cyber-dark text-neon-pink">➕ Create New...</option>
+                                </select>
+                            )}
+                        </div>
+                        <div className="flex items-center gap-1 hidden md:flex">
+                            <Hash size={12} />
+                            <span className="font-mono text-xs">ID: {threadId}</span>
+                        </div>
                     </div>
-                    <button
-                        onClick={onNewSession}
-                        className="flex items-center gap-1 text-xs text-neon-pink hover:text-white transition-colors"
-                    >
-                        <PlusCircle size={12} />
-                        New Topic
-                    </button>
+
+                    {/* Session Manager Trigger */}
+                    <div className="relative group ml-2">
+                        <button
+                            onClick={() => setShowHistory(!showHistory)}
+                            className={`flex items-center gap-1 px-2 py-0.5 rounded border transition-all text-[10px] font-mono ${showHistory ? 'bg-neon-pink/20 border-neon-pink text-neon-pink' : 'bg-black/40 border-cyber-border text-cyber-muted hover:border-neon-pink hover:text-neon-pink'}`}
+                        >
+                            <History size={10} />
+                            TOPIC MANAGER
+                        </button>
+
+                        {/* Floating Dropdown for Thread Management */}
+                        {showHistory && (
+                            <div className="absolute top-full right-0 mt-1 w-64 bg-cyber-dark border border-cyber-border shadow-2xl rounded-md z-50 p-2 overflow-hidden animate-in fade-in slide-in-from-top-1">
+                                <div className="text-[10px] font-bold text-cyber-muted mb-2 border-b border-cyber-border pb-1 flex justify-between items-center px-1">
+                                    <span>LOAD PREVIOUS TOPIC</span>
+                                    <button onClick={() => setShowHistory(false)} className="hover:text-neon-pink p-1">×</button>
+                                </div>
+                                <div className="max-h-48 overflow-y-auto space-y-1 custom-scrollbar pr-1">
+                                    {historyThreads.filter(t => t.project_id === currentProject).map(t => (
+                                        <div key={t.id} className={`flex items-center justify-between p-1.5 rounded text-[10px] font-mono group/item ${t.id === threadId ? 'bg-neon-blue/20 border border-neon-blue/30' : 'hover:bg-white/5 border border-transparent'}`}>
+                                            <button
+                                                onClick={() => {
+                                                    if (t.id !== threadId) {
+                                                        localStorage.setItem('agent_thread_id', t.id);
+                                                        window.location.reload();
+                                                    }
+                                                }}
+                                                className={`flex-1 text-left truncate px-1 ${t.id === threadId ? 'text-neon-blue' : 'text-cyber-text'}`}
+                                                title={t.id}
+                                            >
+                                                {t.id === threadId ? "▶ " : ""}{t.id}
+                                            </button>
+                                            <button
+                                                onClick={() => handleDeleteThread(t.id)}
+                                                className="p-1 text-red-500/50 hover:text-red-500 transition-all flex-shrink-0"
+                                                title="Delete Topic & Data"
+                                            >
+                                                <PlusCircle size={10} className="rotate-45" />
+                                            </button>
+                                        </div>
+                                    ))}
+                                    {historyThreads.filter(t => t.project_id === currentProject).length === 0 && (
+                                        <div className="text-[10px] text-cyber-muted italic p-2">No history found for [{currentProject}].</div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+                    </div>
                 </div>
+
+                <button
+                    onClick={onNewSession}
+                    className="flex items-center gap-1 text-xs text-neon-pink hover:text-white transition-colors"
+                >
+                    <PlusCircle size={12} />
+                    New Topic
+                </button>
             </div>
 
             <div className="flex-1 p-4 overflow-hidden flex flex-col min-h-0">
@@ -270,25 +382,64 @@ export const ChatPanel: React.FC<ChatProps> = ({
                 </div>
             </div>
 
-            <form onSubmit={handleSubmit} className="p-4 bg-cyber-dark border-t border-cyber-border relative flex-shrink-0">
+            <form onSubmit={handleSubmit} className="p-4 bg-cyber-dark border-t border-cyber-border flex-shrink-0 flex flex-col gap-2">
                 {/* Pause/Resume Buttons */}
-                <div className="absolute top-[-20px] left-1/2 -translate-x-1/2 flex gap-2">
+                <div className="flex justify-center gap-2 mb-1">
                     <button
                         type="button"
                         onClick={() => onSendCommand("pause")}
-                        className="bg-slate-800 text-neon-pink hover:bg-slate-700 hover:text-white px-3 py-1 rounded-full text-[10px] flex items-center gap-1 border border-cyber-border shadow-lg transition-all"
+                        className="bg-slate-800 text-neon-pink hover:bg-slate-700 hover:text-white px-3 py-1.5 rounded-full text-[10px] md:text-sm flex items-center gap-1 border border-cyber-border shadow-lg transition-all"
                     >
-                        <PauseCircle size={12} />
+                        <PauseCircle size={14} />
                         Pause / Interrupt
                     </button>
                     <button
                         type="button"
-                        onClick={() => onSendMessage("RESUME")}
-                        className="bg-slate-800 text-neon-green hover:bg-slate-700 hover:text-white px-3 py-1 rounded-full text-[10px] flex items-center gap-1 border border-cyber-border shadow-lg transition-all"
+                        onClick={() => onSendMessage("RESUME", undefined, currentProject)}
+                        className="bg-slate-800 text-neon-green hover:bg-slate-700 hover:text-white px-3 py-1.5 rounded-full text-[10px] md:text-sm flex items-center gap-1 border border-cyber-border shadow-lg transition-all"
                     >
-                        <PlayCircle size={12} />
+                        <PlayCircle size={14} />
                         Resume Research
                     </button>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-4 px-1 mb-1 text-[10px] md:text-sm text-cyber-muted">
+                    <label className="flex items-center cursor-pointer hover:text-white transition-colors">
+                        <input
+                            type="checkbox"
+                            checked={useWebSearch}
+                            onChange={(e) => setUseWebSearch(e.target.checked)}
+                            className="mr-1.5 accent-neon-blue rounded-sm cursor-pointer"
+                        />
+                        Web Search
+                    </label>
+                    <label className="flex items-center cursor-pointer hover:text-white transition-colors">
+                        <input
+                            type="checkbox"
+                            checked={usePaperSearch}
+                            onChange={(e) => setUsePaperSearch(e.target.checked)}
+                            className="mr-1.5 accent-neon-pink rounded-sm cursor-pointer"
+                        />
+                        Paper Search
+                    </label>
+                    <label className="flex items-center cursor-pointer hover:text-white transition-colors">
+                        <input
+                            type="checkbox"
+                            checked={usePatentSearch}
+                            onChange={(e) => setUsePatentSearch(e.target.checked)}
+                            className="mr-1.5 accent-neon-green rounded-sm cursor-pointer"
+                        />
+                        Patent Search
+                    </label>
+                    <label className="flex items-center cursor-pointer hover:text-white transition-colors">
+                        <input
+                            type="checkbox"
+                            checked={useMediaSearch}
+                            onChange={(e) => setUseMediaSearch(e.target.checked)}
+                            className="mr-1.5 accent-neon-yellow rounded-sm cursor-pointer"
+                        />
+                        Media Search
+                    </label>
                 </div>
 
                 <div className="relative">
@@ -312,7 +463,7 @@ export const ChatPanel: React.FC<ChatProps> = ({
                     </button>
                 </div>
             </form>
-        </div >
+        </div>
     );
 };
 

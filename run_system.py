@@ -23,34 +23,24 @@ def run_system():
     backend_process = subprocess.Popen(
         [venv_python, "-m", "uvicorn", "app.main:app", "--port", "8000"],
         cwd=os.path.join(os.getcwd(), "backend"),
-        env=backend_env
+        env=backend_env,
+        preexec_fn=os.setsid # Create new process group
     )
 
-    # 2. Start LLaMA Server (Local LLM)
-    print("🔹 Launching LLaMA Server (port 8080)...")
-    llama_bin = "/home/hgeon/gravity/LangAIAgent/llama.cpp/build/bin/llama-server"
-    llama_model = "/home/hgeon/models/llama4_scout/meta-llama_Llama-4-Scout-17B-16E-Instruct-Q4_K_M/meta-llama_Llama-4-Scout-17B-16E-Instruct-Q4_K_M-00001-of-00002.gguf"
+    # 2. Start LLaMA Server (RETIRED: Now using Ollama via local_model.py)
+    # print("🔹 Launching LLaMA Server (port 8080)...")
+    # llama_bin = "/home/hgeon/gravity/LangAIAgent/llama.cpp/build/bin/llama-server"
+    # llama_model = "/home/hgeon/models/llama4_scout/meta-llama_Llama-4-Scout-17B-16E-Instruct-Q4_K_M/meta-llama_Llama-4-Scout-17B-16E-Instruct-Q4_K_M-00001-of-00002.gguf"
     
-    # Check if files exist
-    if not os.path.exists(llama_bin) or not os.path.exists(llama_model):
-        print("⚠️ LLaMA binary or model not found. Skipping Local LLM.")
-        llama_process = None
-    else:
-        try:
-            print("⏳ Starting LLaMA Server... (Check logs below)")
-            # RTX 5090 (32GB VRAM) safe settings:
-            # - Context (-c): 16384 (16k) - balances capacity vs memory
-            # - GPU Layers (-ngl): 16 - partial offload for MoE model
-            # WARNING: 32k context causes OOM and system crash!
-            llama_process = subprocess.Popen(
-                [llama_bin, "-m", llama_model, "--port", "8080", "-c", "16384", "-ngl", "16"],
-                stdout=None, 
-                stderr=None
-            )
-            print("✅ LLaMA Server Process Launched.")
-        except Exception as e:
-            print(f"❌ Failed to start LLaMA: {e}")
-            llama_process = None
+    # # Check if files exist
+    # if not os.path.exists(llama_bin) or not os.path.exists(llama_model):
+    #     print("⚠️ LLaMA binary or model not found. Skipping Local LLM.")
+    #     llama_process = None
+    # else:
+    #     try:
+    #         print("⏳ Starting LLaMA Server... (DISABLED: Managed by Ollama)")
+    #         # llama_process = subprocess.Popen(...)
+    llama_process = None
 
     # 3. Start Frontend
     print("🔹 Launching Frontend (vite)...")
@@ -58,7 +48,8 @@ def run_system():
         ["npm", "run", "dev", "--", "--host"],
         cwd=os.path.join(os.getcwd(), "frontend"),
         stdout=None, 
-        stderr=None
+        stderr=None,
+        preexec_fn=os.setsid # Create new process group
     )
 
     print("✅ System Online!")
@@ -89,22 +80,44 @@ def run_system():
         print("\n🛑 Manual Stop received.")
     finally:
         print("Cleaning up processes...")
-        # Kill Frontend
-        if frontend_process.poll() is None:
-             # Try to kill process group if possible
-            try:
-                os.killpg(os.getpgid(frontend_process.pid), signal.SIGTERM)
-            except:
-                frontend_process.terminate()
         
-        # Kill Backend
-        if backend_process.poll() is None:
-             backend_process.terminate()
+        def kill_process_group(proc, name):
+            """Two-stage kill: SIGTERM (graceful) → SIGKILL (forced)"""
+            if proc and proc.poll() is None:
+                print(f"🛑 Stopping {name} Server (Process Group)...")
+                try:
+                    pgid = os.getpgid(proc.pid)
+                    # Stage 1: Graceful SIGTERM
+                    os.killpg(pgid, signal.SIGTERM)
+                    # Wait up to 2 seconds for graceful shutdown
+                    try:
+                        proc.wait(timeout=2)
+                    except subprocess.TimeoutExpired:
+                        # Stage 2: Force SIGKILL
+                        print(f"   ⚡ {name} didn't stop gracefully. Force killing...")
+                        os.killpg(pgid, signal.SIGKILL)
+                        proc.wait(timeout=3)
+                except Exception as e:
+                    print(f"⚠️ Failed to kill {name} process group: {e}. Forcing termination...")
+                    proc.kill() # Last resort
+        
+        # Kill Frontend Process Group
+        kill_process_group(frontend_process, "Frontend")
+        
+        # Kill Backend Process Group
+        kill_process_group(backend_process, "Backend")
 
-        # Kill LLaMA
+        # Kill LLaMA (If active)
         if llama_process and llama_process.poll() is None:
             print("🛑 Stopping LLaMA Server...")
             llama_process.terminate()
+        
+        # --- FINAL SAFETY NET: Force-release port 8000 ---
+        try:
+            subprocess.run(["fuser", "-k", "8000/tcp"], 
+                          capture_output=True, timeout=3)
+        except Exception:
+            pass  # Best-effort cleanup
         
         print("👋 System Shutdown Complete.")
 

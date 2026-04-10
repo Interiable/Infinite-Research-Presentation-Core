@@ -1,0 +1,50 @@
+[
+  {
+    "type": "agent_message",
+    "sender": "User",
+    "content": "Samsung Design의 Brand Identity 및 Brand Power를 미디어 search 기반으로 조사하고 분석 및 인사이트 도출을 짧게 1단계로만 요약해서 브리핑해줘",
+    "timestamp": "2026-04-01T17:59:43.546161"
+  },
+  {
+    "type": "agent_message",
+    "sender": "Archivist",
+    "content": "로컬 문서를 벡터 DB에 색인화 완료했습니다. 42자 분량의 지식 기반을 구축했습니다. Planner에게 넘기겠습니다. 📂",
+    "timestamp": "2026-04-01T17:59:43.651561"
+  },
+  {
+    "type": "agent_message",
+    "sender": "Planner",
+    "content": "프로젝트를 분석하고 간단한 연구 계획을 수립했습니다. 총 2단계로 진행합니다. 팀, 시작하겠습니다! 🚀",
+    "timestamp": "2026-04-01T17:59:59.650190"
+  },
+  {
+    "type": "agent_message",
+    "sender": "Supervisor",
+    "content": "좋아, Deep Researcher 팀에게 넘기겠어. 시작해줘.",
+    "timestamp": "2026-04-01T17:59:59.654685"
+  },
+  {
+    "type": "agent_message",
+    "sender": "DeepResearcher",
+    "content": "웹 리서치를 마쳤습니다. 최신 자료를 수집했고, 캐시에 저장해두었습니다. 🌐",
+    "timestamp": "2026-04-01T18:03:54.202101"
+  },
+  {
+    "type": "agent_message",
+    "sender": "Supervisor",
+    "content": "좋아, Researcher 팀에게 넘기겠어. 시작해줘.",
+    "timestamp": "2026-04-01T18:03:54.209724"
+  },
+  {
+    "type": "agent_message",
+    "sender": "Researcher",
+    "content": "조사 결과를 정리해서 보고서를 작성했습니다. Supervisor, 검토 부탁드립니다. 📝",
+    "timestamp": "2026-04-01T18:04:14.523560"
+  },
+  {
+    "type": "agent_message",
+    "sender": "Supervisor",
+    "content": "좋아, Deep Researcher 팀에게 넘기겠어. 시작해줘.",
+    "timestamp": "2026-04-01T18:04:14.534912"
+  }
+]

@@ -1,0 +1,560 @@
+[
+  {
+    "type": "agent_message",
+    "sender": "User",
+    "content": "You are acting as the external vendor contracted to execute the full \"Media Tracking for Samsung Design\" Statement of Work (SOW). You must deliver ALL deliverables specified in the SOW below. Your final output is a single comprehensive PDF research report with all structured data presented as tables within the report body.\nIMPORTANT CONSTRAINTS:\n- Focus period: April 2025 onward (post-appointment of President Mauro Porcini as CDO of Samsung Design). Include YoY comparisons with pre-Porcini data where available.\n- PowerPoint is NOT required — PDF report only.\n- Excel data files are NOT required — all structured data must be embedded as tables in the report.\n- All other SOW deliverables MUST be fully addressed.\nCRITICAL — PLAN STRUCTURE:\nDo NOT create more than 8 main steps in the research plan. Keep the plan concise and well-organized.\n## PART A: MONITORING SETUP & METHODOLOGY\n### A.1 Monitoring Framework Definition\nDefine and document the complete tracking infrastructure:\n**Tracking Criteria:**\n- Period: April 2025 through present (with historical comparison to 2023-early 2025 pre-Porcini era)\n- Languages: English, Korean, Italian\n- Demographics: Global tech consumers, design professionals, business/industry analysts, general public\n- Channels: Global tech media (The Verge, Engadget, Wired, CNET, TechCrunch), design-specific media (Dezeen, Designboom, Wallpaper*, Core77, Domus), business press (Bloomberg, Forbes, Business Insider), social media platforms (X/Twitter, Reddit, YouTube, Instagram), Korean media (조선일보, 중앙일보, 한국경제, IT조선, 디자인프레스), Italian media (Corriere della Sera, La Repubblica, Il Sole 24 Ore)\n**Keyword Definition & Listening Topics:**\nCreate a structured keyword taxonomy covering the following categories:\n- Core brand keywords: \"Samsung Design\", \"Samsung Design Leadership\", \"Samsung Galaxy design\", \"Samsung Bespoke design\", \"Samsung design language\", \"Samsung design quality\"\n- Leadership keywords: \"Mauro Porcini\", \"Mauro Porcini Samsung\", \"Samsung CDO\", \"Samsung Chief Design Officer\", \"Samsung design president\"\n- Product design keywords: \"Galaxy Z Fold design\", \"Galaxy Z Flip design\", \"Galaxy S design\", \"Samsung foldable design\", \"Samsung wearable design\", \"Galaxy Ring design\"\n- Philosophy keywords: \"Samsung design philosophy\", \"Samsung Essential design\", \"Samsung Innovative design\", \"Samsung Harmonious design\"\n- Event keywords: \"Samsung Milan Design Week\", \"Samsung Unpacked design\", \"Samsung CES design\", \"Samsung design award\"\n- Include keyword variants, wildcards for capturing misspellings and unexpected variants\n- Include language variants across English, Korean (\"삼성 디자인\", \"마우로 포르치니\"), and Italian (\"Samsung design Milano\", \"Mauro Porcini Samsung\")\n**Adjective-Based Perception Capture Method:**\nSince design quality is often described through adjectives without mentioning explicit keywords, define a methodology to capture:\n- Positive descriptors: \"premium\", \"elegant\", \"refined\", \"minimalist\", \"innovative\", \"bold\", \"sophisticated\", \"sleek\", \"beautiful\", \"iconic\"\n- Negative descriptors: \"cheap\", \"plastic\", \"copycat\", \"generic\", \"boring\", \"cluttered\", \"dated\", \"uninspired\"\n- Track frequency and context of these adjectives in Samsung product reviews and media coverage\n**Filtering Themes:**\nDefine the thematic filters for organizing collected data into actionable clusters:\n- Samsung Design Identity & Philosophy\n- Product Design Reviews & Reception\n- Design Leadership (Mauro Porcini)\n- Design Awards & Recognition\n- Event Coverage (Milan Design Week, Unpacked, etc.)\n- Competitive Design Comparisons\n- Consumer Design Perception\nDeliver this section as a comprehensive table: [Keyword Category | Keywords | Variants | Language | Channel Priority]\n### A.2 Data Refinement Process\nDocument the data quality methodology:\n- Duplicate detection and removal criteria\n- Exception and bias management procedures (e.g., paid/sponsored content identification, bot-generated content filtering)\n- Spam filtering criteria\n- Relevance filtering: criteria for excluding content that mentions Samsung but is not design-related\n- Data validation: cross-referencing claims across multiple sources\n---\n## PART B: DATA COLLECTION & ANALYSIS\n### B.1 Media Coverage Data Collection\nConduct a comprehensive web and media search to collect actual media articles, reviews, opinion pieces, interviews, podcasts, YouTube videos, and social media discussions about Samsung Design from April 2025 onward.\nFor each major finding, document:\n- Source (publication name, author, date, URL)\n- Content summary (key messages and claims)\n- Sentiment classification (Positive / Negative / Neutral / Mixed) with justification\n- Topic cluster assignment\n- Estimated reach/impressions (where determinable)\nPresent ALL collected data in a structured table with columns: [# | Date | Source | Author | Title | Topic Cluster | Sentiment | Key Message | Reach Estimate | URL]\n### B.2 Sentiment Analysis & Metrics\nPerform deep sentiment analysis:\n**Overall Sentiment Distribution:**\n- Calculate percentage breakdown: Positive / Negative / Neutral / Mixed\n- Total mention count across all channels\n**Sentiment by Topic Cluster:**\n- Which design themes generate the most positive coverage?\n- Which themes carry the most risk (negative sentiment)?\n**Sentiment Trajectory Over Time:**\n- Month-by-month sentiment breakdown from April 2025 onward\n- Identify inflection points and correlate with specific events or announcements\n- Present as a data table suitable for chart visualization: [Month | Positive% | Negative% | Neutral% | Mixed% | Total Mentions | Key Event]\n**Quantitative Metrics (accumulate where data is available):**\n- Total mentions (volume of Samsung Design coverage)\n- Estimated impressions (potential audience exposure)\n- Estimated reach (unique audience)\n- Engagement indicators (comments, shares, reactions on articles and social posts)\n**Adjective Frequency Analysis:**\n- Rank the most commonly used descriptive words associated with Samsung Design\n- Present as table: [Rank | Adjective | Frequency | Sentiment Tendency | Example Context]\n**Competitive Sentiment Benchmark:**\n- Compare Samsung Design sentiment against:\n  - Apple Design\n  - Google Pixel Design\n  - Other relevant competitors (Xiaomi, Huawei, Sony if relevant)\n- Present as comparison table: [Brand | Positive% | Negative% | Neutral% | Key Strengths | Key Weaknesses]\n**Key Risk Indicators:**\n- Identify emerging negative narratives, controversies, or reputational risks\n- Assess severity and likelihood of escalation\n- Present as risk register: [Risk | Severity (1-5) | Likelihood (1-5) | Evidence | Recommended Response]\n### B.3 Media Exposure Value (MEV) Calculation\nAttempt to quantify the monetary equivalent of Samsung Design's earned media coverage:\n- Use industry-standard approaches (Advertising Value Equivalency / modern earned media valuation)\n- Calculate estimated MEV for major coverage pieces\n- Aggregate total MEV for the tracking period\n- Compare with estimated cost of equivalent paid media\n- Present ROI-equivalent analysis: [Coverage Category | Estimated MEV | Equivalent Ad Cost | ROI Ratio]\n---\n## PART C: LEADERSHIP & EVENT ANALYSIS\n### C.1 Mauro Porcini Leadership Impact Analysis\nDedicated deep-dive into CDO Mauro Porcini's impact:\n**Public Presence Inventory:**\n- Catalog ALL identified public appearances, keynote speeches, panel discussions, interviews (print/broadcast/podcast), authored articles/op-eds, and social media activity by Porcini as Samsung CDO\n- Present as table: [Date | Type | Platform/Publication | Title/Topic | Estimated Reach | URL]\n**Media Reception of Appointment:**\n- How was Porcini's appointment covered? Analyze tone, framing, and narrative across tech, design, and business press\n- Compare reception in English, Korean, and Italian media\n**Narrative Shift Analysis:**\n- Document measurable shifts in how media describes Samsung's design philosophy pre vs. post Porcini\n- Language comparison: identify new terminology, framing patterns, or narrative themes that emerged after appointment\n- Present as before/after comparison table: [Dimension | Pre-Porcini Narrative | Post-Porcini Narrative | Sources]\n**CDO Personal Brand Metrics:**\n- Porcini-specific mention volume and sentiment\n- Personal brand perception in design community vs. general media\n### C.2 Event-Based Reports\nProvide a dedicated deep-dive report for ALL major Samsung Design events that occurred between April 2025 and March 2026. For each event, analyze:\n- Pre-event anticipation coverage\n- During-event real-time coverage analysis\n- Post-event retrospective coverage\n- Samsung's positioning and activities at the event\n- Comparison with competitors' presence at the same event\n- Key media narratives and takeaways\n- Sentiment breakdown specific to this event\n- Impact on overall Samsung Design perception\nEvents to cover include (but are not limited to — identify and include any additional relevant events discovered during research):\n#### Event: Milan Design Week (April 2025)\n- Samsung's exhibition, installations, and activations under Porcini's creative direction\n- Comparison with Samsung's previous Milan Design Week appearances\n- Porcini's personal appearances and keynotes at the event\n#### Event: Galaxy Unpacked Summer (July 2025)\n- Design-specific media coverage (isolated from specs/features/pricing coverage)\n- Product design reception and sentiment for each announced product\n- How Porcini's design vision was reflected in product reception\n- Competitive design comparisons with rival product launches\n#### Event: IFA Berlin (September 2025)\n- Samsung Design presence and product design showcase\n- Bespoke Home product design coverage\n- Media design narrative at IFA vs. other Samsung events\n#### Event: Galaxy Unpacked / New Product Launches (October-January)\n- Galaxy S series launch design reception\n- Any special Samsung Design announcements or showcases\n#### Event: CES 2026 (January 2026)\n- Samsung Design presence and future design vision presentations\n- Bespoke, AI, and connected product design coverage\n- Porcini's role and visibility at CES\n#### Event: MWC Barcelona (February-March 2026)\n- Samsung mobile design showcase\n- Any design-specific announcements or keynotes\n#### Event: Design Awards Season (2025-2026)\n- Samsung's performance at iF Design Award, Red Dot Design Award, IDEA, and other major design competitions\n- YoY comparison of Samsung's award counts, categories, and notable wins\n- Media coverage volume and sentiment around award announcements\n- How award performance is framed in media narratives about Samsung Design quality\n---\n## PART D: LEADERSHIP REPORTS & EXECUTIVE DELIVERABLES\n### D.1 Executive Summary of Key Findings\nProduce a leadership-ready executive summary:\n- **Top 5 Key Findings** with supporting evidence and source citations\n- **YoY Sentiment Comparison**: Pre-Porcini era (2023-early 2025) vs. Post-Porcini era (April 2025+)\n- **Impact Analysis**: Measurable impact of Samsung Design restructuring, new CDO appointment, and design activities on public perception\n- **Sentiment Change Attribution**: Which specific events, announcements, or activities drove the largest sentiment changes?\n### D.2 Monthly Report Structure\nProvide a structured monthly breakdown covering 12 months: April 2025 through March 2026 (present).\nFor each month, include:\n- Total mention volume\n- Sentiment distribution (Positive / Negative / Neutral / Mixed percentages)\n- Top 3 most impactful media pieces with source and URL\n- Key events or announcements that drove coverage that month\n- Emerging trends or risk signals\n- Month-over-month sentiment change and analysis of what caused changes\nPresent as structured table: [Month | Mentions | Positive% | Negative% | Top Story | Sentiment Change vs Prior Month | Key Event]\n### D.3 Risk Assessment & Opportunities\n- **Emerging Risks**: Negative trends or narratives requiring attention\n- **Opportunity Identification**: Untapped opportunities for positive narrative building\n- **Actionable Recommendations**: 5-7 specific, evidence-based recommendations for Samsung Design's media and communications strategy\n---\n## PART E: DOCUMENTATION & PROPOSAL RESPONSE\n### E.1 Methodology Documentation\nFully document:\n- Topic and theme query definitions used\n- Topic summaries for each listening theme\n- Dashboard summary structure: what metrics are tracked, how they are calculated\n- Data sources and tools used\n- Data refinement and quality assurance process\n### E.2 Vendor Proposal Response\nAs the executing entity, provide:\n- **Executive Summary**: Overview of what this analysis delivers and its strategic value\n- **Description of Deliverables**: Itemized list of all outputs produced\n- **Assumptions**: Key assumptions made during this analysis (e.g., data availability, coverage completeness, sentiment classification methodology)\n- **Approach and Methodology**: Step-by-step description of how the media tracking was conducted\n- **Capabilities Statement**: Description of analytical capabilities, tools, and methods employed\n- **Reference Cases**: Comparable analyses or methodologies referenced\n### E.3 Response Matrix & Cost Estimation\nProvide a quotation-style cost estimation for the work delivered, structured as follows:\n**Cost Structure Table:**\n| Deliverable | Unit | Quantity | Estimated Unit Cost (KRW) | Total Cost (KRW) | Notes |\n|---|---|---|---|---|---|\n| Monthly Report | Per report | 12 (Apr 2025 - Mar 2026) | [Estimate] | [Total] | Based on industry benchmarks for media monitoring reports |\n| Event-Based Report | Per report | 7+ (all major events) | [Estimate] | [Total] | Milan Design Week, Unpacked, IFA, CES, MWC, Awards, etc. |\n| Final Comprehensive Report | Per report | 1 | [Estimate] | [Total] | Full synthesis with all data |\n| Monitoring Setup & Configuration | One-time | 1 | [Estimate] | [Total] | Keyword definition, channel setup |\n| Data Collection & Refinement | Monthly | 12 | [Estimate] | [Total] | Ongoing data cleaning and validation |\n| Other Cost Variables | Variable | - | [Estimate] | [Total] | Ad-hoc deep dives, additional translations |\n**Total Estimated Project Cost**: [Sum]\nPricing should be benchmarked against industry standards for media tracking and monitoring services of comparable scope. Research typical pricing from agencies like Meltwater, Brandwatch, Cision, Kantar Media, or similar firms for media monitoring projects of this scale.\nProvide the pricing formula:\nTotal = (Monthly Report Unit Price × 12) + (Event Report Unit Price × Number of Events) + Final Report + Setup Cost + Data Collection − [Any applicable cost variables/discounts]\n---\n## REPORT FORMAT REQUIREMENTS\n- **Language**: English (primary). Korean translations of key summaries where relevant.\n- **Data tables**: ALL structured data as Markdown tables embedded in the report body.\n- **Citations**: Every factual claim must include inline citations `[Web: Source Title]` with actual source URLs in the References section formatted as `[Web: Title](URL)`.\n- **Evidence-based**: All insights must be traceable to specific media sources. Clearly label any estimates or projections.\n- **Quantitative rigor**: Include numerical metrics, percentages, frequency counts, and comparative benchmarks wherever possible.\n\n\nCRITICAL — PLAN STRUCTURE:\nDo NOT create more than 8 main steps in the research plan. Keep the plan concise and well-organized.",
+    "timestamp": "2026-04-02T14:10:20.291028"
+  },
+  {
+    "type": "agent_message",
+    "sender": "Archivist",
+    "content": "로컬 문서를 벡터 DB에 색인화 완료했습니다. 42자 분량의 지식 기반을 구축했습니다. Planner에게 넘기겠습니다. 📂",
+    "timestamp": "2026-04-02T14:10:20.398675"
+  },
+  {
+    "type": "agent_message",
+    "sender": "Planner",
+    "content": "프로젝트를 분석하고 심층적인 연구 계획을 수립했습니다. 총 8단계로 진행합니다. 팀, 시작하겠습니다! 🚀",
+    "timestamp": "2026-04-02T14:10:47.173675"
+  },
+  {
+    "type": "agent_message",
+    "sender": "Plan Refiner",
+    "content": "Step 1의 세부 실행 계획을 수립했습니다. 4개의 sub-step으로 분할: 'Develop Multilingual Keyword Taxonomy', 'Define Perception Capture Method and Filtering Themes', 'Document Data Refinement Process and Methodology (E.1)'.... Supervisor에게 보고합니다. 📋",
+    "timestamp": "2026-04-02T14:11:01.422263"
+  },
+  {
+    "type": "agent_message",
+    "sender": "Supervisor",
+    "content": "좋아, Researcher 팀에게 넘기겠어. 시작해줘.",
+    "timestamp": "2026-04-02T14:11:01.428703"
+  },
+  {
+    "type": "agent_message",
+    "sender": "Researcher",
+    "content": "작업 결과를 보고합니다: DELEGATE_DEEP_RESEARCH: Create a comprehensive keyword taxonomy covering English, Korean, and Italian. Categorize keywords into: Core brand (e.g.",
+    "timestamp": "2026-04-02T14:11:01.441387"
+  },
+  {
+    "type": "agent_message",
+    "sender": "Supervisor",
+    "content": "좋아, Deep Researcher 팀에게 넘기겠어. 시작해줘.",
+    "timestamp": "2026-04-02T14:11:01.449368"
+  },
+  {
+    "type": "agent_message",
+    "sender": "DeepResearcher",
+    "content": "웹 리서치를 마쳤습니다. 최신 자료를 수집했고, 캐시에 저장해두었습니다. 🌐",
+    "timestamp": "2026-04-02T14:11:50.763697"
+  },
+  {
+    "type": "agent_message",
+    "sender": "Supervisor",
+    "content": "좋아, Researcher 팀에게 넘기겠어. 시작해줘.",
+    "timestamp": "2026-04-02T14:11:50.774383"
+  },
+  {
+    "type": "agent_message",
+    "sender": "Archivist (Web DB)",
+    "content": "🌐 Found relevant web results from Web Search Library DB. Injecting 3704 chars.",
+    "timestamp": "2026-04-02T14:11:57.578864"
+  },
+  {
+    "type": "agent_message",
+    "sender": "Gemini Flash (Writer)",
+    "content": "✍️ Chapter draft complete (6060 chars). Sending for review.",
+    "timestamp": "2026-04-02T14:12:14.679223"
+  },
+  {
+    "type": "agent_message",
+    "sender": "Researcher",
+    "content": "챕터 1 '1.1.1 Core Brand and Philosophy Keyword Taxonomy (EN, KO, IT)' 작성 중입니다... (초안) ✍️",
+    "timestamp": "2026-04-02T14:12:30.070552"
+  },
+  {
+    "type": "agent_message",
+    "sender": "Qwen (QC)",
+    "content": "✅ Format check **PASSED**. Forwarding to Gemini Pro for detailed review.",
+    "timestamp": "2026-04-02T14:12:34.119977"
+  },
+  {
+    "type": "agent_message",
+    "sender": "Supervisor",
+    "content": "아직 부족해. 1. **Incorrect Table Structure**: The SOW explicitly requires the table to be formatted with the columns: `[Keyword Category | Keywords | Variants | L... 수정해서 다시 제출해.",
+    "timestamp": "2026-04-02T14:12:48.672196"
+  },
+  {
+    "type": "agent_message",
+    "sender": "Archivist (Web DB)",
+    "content": "🌐 Found relevant web results from Web Search Library DB. Injecting 3704 chars.",
+    "timestamp": "2026-04-02T14:12:55.312149"
+  },
+  {
+    "type": "agent_message",
+    "sender": "Gemini Flash (Writer)",
+    "content": "✍️ Chapter draft complete (9772 chars). Sending for review.",
+    "timestamp": "2026-04-02T14:13:17.442666"
+  },
+  {
+    "type": "agent_message",
+    "sender": "Researcher",
+    "content": "챕터 1 '1.1.1 Core Brand and Philosophy Keyword Taxonomy (EN, KO, IT)' 작성 중입니다... (v2) ✍️",
+    "timestamp": "2026-04-02T14:13:41.379142"
+  },
+  {
+    "type": "agent_message",
+    "sender": "Qwen (QC)",
+    "content": "✅ Format check **PASSED**. Forwarding to Gemini Pro for detailed review.",
+    "timestamp": "2026-04-02T14:13:41.672018"
+  },
+  {
+    "type": "agent_message",
+    "sender": "Supervisor",
+    "content": "아직 부족해. 1. **Missing Mandated Categories (Product & Event)**: The Current Step Target and SOW explicitly require you to categorize keywords into: Core brand, ... 수정해서 다시 제출해.",
+    "timestamp": "2026-04-02T14:13:55.702192"
+  },
+  {
+    "type": "agent_message",
+    "sender": "Archivist (Web DB)",
+    "content": "🌐 Found relevant web results from Web Search Library DB. Injecting 3704 chars.",
+    "timestamp": "2026-04-02T14:14:02.292204"
+  },
+  {
+    "type": "agent_message",
+    "sender": "Gemini Flash (Writer)",
+    "content": "✍️ Chapter draft complete (10245 chars). Sending for review.",
+    "timestamp": "2026-04-02T14:14:20.501070"
+  },
+  {
+    "type": "agent_message",
+    "sender": "Researcher",
+    "content": "챕터 1 '1.1.1 Core Brand and Philosophy Keyword Taxonomy (EN, KO, IT)' 작성 중입니다... (v3) ✍️",
+    "timestamp": "2026-04-02T14:14:47.396537"
+  },
+  {
+    "type": "agent_message",
+    "sender": "Qwen (QC)",
+    "content": "✅ Format check **PASSED**. Forwarding to Gemini Pro for detailed review.",
+    "timestamp": "2026-04-02T14:14:47.708953"
+  },
+  {
+    "type": "agent_message",
+    "sender": "Supervisor",
+    "content": "아직 부족해. 1. **Missing SOW-Mandated Keywords**: While you successfully added the Product and Event categories and perfectly aligned the structure, you omitted s... 수정해서 다시 제출해.",
+    "timestamp": "2026-04-02T14:15:08.654936"
+  },
+  {
+    "type": "agent_message",
+    "sender": "Archivist (Web DB)",
+    "content": "🌐 Found relevant web results from Web Search Library DB. Injecting 3704 chars.",
+    "timestamp": "2026-04-02T14:15:15.344836"
+  },
+  {
+    "type": "agent_message",
+    "sender": "Gemini Flash (Writer)",
+    "content": "✍️ Chapter draft complete (8145 chars). Sending for review.",
+    "timestamp": "2026-04-02T14:15:32.599343"
+  },
+  {
+    "type": "agent_message",
+    "sender": "Researcher",
+    "content": "챕터 1 '1.1.1 Core Brand and Philosophy Keyword Taxonomy (EN, KO, IT)' 작성 중입니다... (v4) ✍️",
+    "timestamp": "2026-04-02T14:15:49.654515"
+  },
+  {
+    "type": "agent_message",
+    "sender": "Qwen (QC)",
+    "content": "✅ Format check **PASSED**. Forwarding to Gemini Pro for detailed review.",
+    "timestamp": "2026-04-02T14:15:52.781506"
+  },
+  {
+    "type": "agent_message",
+    "sender": "Supervisor",
+    "content": "아직 부족해. 1. **Missing SOW-Mandated Leadership Keywords**: While you successfully added the missing Core Brand and Philosophy keywords, you are still missing ex... 수정해서 다시 제출해.",
+    "timestamp": "2026-04-02T14:16:07.293819"
+  },
+  {
+    "type": "agent_message",
+    "sender": "Archivist (Web DB)",
+    "content": "🌐 Found relevant web results from Web Search Library DB. Injecting 3704 chars.",
+    "timestamp": "2026-04-02T14:16:10.721748"
+  },
+  {
+    "type": "agent_message",
+    "sender": "Gemini Flash (Writer)",
+    "content": "✍️ Chapter draft complete (8039 chars). Sending for review.",
+    "timestamp": "2026-04-02T14:16:31.236970"
+  },
+  {
+    "type": "agent_message",
+    "sender": "Researcher",
+    "content": "챕터 1 '1.1.1 Core Brand and Philosophy Keyword Taxonomy (EN, KO, IT)' 작성 중입니다... (v5) ✍️",
+    "timestamp": "2026-04-02T14:16:59.627247"
+  },
+  {
+    "type": "agent_message",
+    "sender": "Qwen (QC)",
+    "content": "✅ Format check **PASSED**. Forwarding to Gemini Pro for detailed review.",
+    "timestamp": "2026-04-02T14:17:03.746127"
+  },
+  {
+    "type": "agent_message",
+    "sender": "Supervisor",
+    "content": "이번이 5번째 시도야. 1. **Missing SOW-Mandated Keywords**: While you successfully fixed the Leadership category and the table structure, you ... 이번에는 확실히 수정해.",
+    "timestamp": "2026-04-02T14:17:18.826698"
+  },
+  {
+    "type": "agent_message",
+    "sender": "Archivist (Web DB)",
+    "content": "🌐 Found relevant web results from Web Search Library DB. Injecting 3704 chars.",
+    "timestamp": "2026-04-02T14:17:22.221174"
+  },
+  {
+    "type": "agent_message",
+    "sender": "Gemini Flash (Writer)",
+    "content": "✍️ Chapter draft complete (10495 chars). Sending for review.",
+    "timestamp": "2026-04-02T14:17:42.017086"
+  },
+  {
+    "type": "agent_message",
+    "sender": "Researcher",
+    "content": "챕터 1 '1.1.1 Core Brand and Philosophy Keyword Taxonomy (EN, KO, IT)' 작성 중입니다... (v6) ✍️",
+    "timestamp": "2026-04-02T14:20:42.064195"
+  },
+  {
+    "type": "agent_message",
+    "sender": "Supervisor",
+    "content": "🔧 Soft Intervention complete. Now self-evaluating the fixed draft before deciding next step.",
+    "timestamp": "2026-04-02T14:21:34.396882"
+  },
+  {
+    "type": "agent_message",
+    "sender": "Researcher",
+    "content": "조사 결과를 정리해서 보고서를 작성했습니다. Supervisor, 검토 부탁드립니다. 📝",
+    "timestamp": "2026-04-02T14:21:34.444858"
+  },
+  {
+    "type": "agent_message",
+    "sender": "Supervisor",
+    "content": "좋아, Researcher 팀에게 넘기겠어. 시작해줘.",
+    "timestamp": "2026-04-02T14:21:34.490040"
+  },
+  {
+    "type": "agent_message",
+    "sender": "Archivist (Web DB)",
+    "content": "🌐 Found relevant web results from Web Search Library DB. Injecting 3704 chars.",
+    "timestamp": "2026-04-02T14:21:38.184627"
+  },
+  {
+    "type": "agent_message",
+    "sender": "Gemini Flash (Writer)",
+    "content": "✍️ Chapter draft complete (9004 chars). Sending for review.",
+    "timestamp": "2026-04-02T14:21:53.429724"
+  },
+  {
+    "type": "agent_message",
+    "sender": "Archivist (Web DB)",
+    "content": "🌐 Found relevant web results from Web Search Library DB. Injecting 3704 chars.",
+    "timestamp": "2026-04-02T14:24:53.792005"
+  },
+  {
+    "type": "agent_message",
+    "sender": "Gemini Flash (Writer)",
+    "content": "✍️ Chapter draft complete (9004 chars). Sending for review.",
+    "timestamp": "2026-04-02T14:25:08.947336"
+  },
+  {
+    "type": "agent_message",
+    "sender": "Qwen (QC)",
+    "content": "✅ Format check **PASSED**. Forwarding to Gemini Pro for detailed review.",
+    "timestamp": "2026-04-02T14:28:10.606931"
+  },
+  {
+    "type": "agent_message",
+    "sender": "Archivist (Web DB)",
+    "content": "🌐 Found relevant web results from Web Search Library DB. Injecting 3704 chars.",
+    "timestamp": "2026-04-02T14:28:30.116453"
+  },
+  {
+    "type": "agent_message",
+    "sender": "Gemini Flash (Writer)",
+    "content": "✍️ Chapter draft complete (9985 chars). Sending for review.",
+    "timestamp": "2026-04-02T14:28:50.286944"
+  },
+  {
+    "type": "agent_message",
+    "sender": "Qwen (QC)",
+    "content": "✅ Format check **PASSED**. Forwarding to Gemini Pro for detailed review.",
+    "timestamp": "2026-04-02T14:29:19.365930"
+  },
+  {
+    "type": "agent_message",
+    "sender": "Archivist (Web DB)",
+    "content": "🌐 Found relevant web results from Web Search Library DB. Injecting 3704 chars.",
+    "timestamp": "2026-04-02T14:29:36.493560"
+  },
+  {
+    "type": "agent_message",
+    "sender": "Gemini Flash (Writer)",
+    "content": "✍️ Chapter draft complete (6861 chars). Sending for review.",
+    "timestamp": "2026-04-02T14:29:50.300062"
+  },
+  {
+    "type": "agent_message",
+    "sender": "Qwen (QC)",
+    "content": "✅ Format check **PASSED**. Forwarding to Gemini Pro for detailed review.",
+    "timestamp": "2026-04-02T14:30:04.338181"
+  },
+  {
+    "type": "agent_message",
+    "sender": "Archivist (Web DB)",
+    "content": "🌐 Found relevant web results from Web Search Library DB. Injecting 3704 chars.",
+    "timestamp": "2026-04-02T14:30:28.822977"
+  },
+  {
+    "type": "agent_message",
+    "sender": "Gemini Flash (Writer)",
+    "content": "✍️ Chapter draft complete (6667 chars). Sending for review.",
+    "timestamp": "2026-04-02T14:30:50.606711"
+  },
+  {
+    "type": "agent_message",
+    "sender": "Qwen (QC)",
+    "content": "✅ Format check **PASSED**. Forwarding to Gemini Pro for detailed review.",
+    "timestamp": "2026-04-02T14:31:06.173882"
+  },
+  {
+    "type": "agent_message",
+    "sender": "Archivist (Web DB)",
+    "content": "🌐 Found relevant web results from Web Search Library DB. Injecting 3704 chars.",
+    "timestamp": "2026-04-02T14:31:26.317782"
+  },
+  {
+    "type": "agent_message",
+    "sender": "Gemini Flash (Writer)",
+    "content": "✍️ Chapter draft complete (5360 chars). Sending for review.",
+    "timestamp": "2026-04-02T14:31:41.285941"
+  },
+  {
+    "type": "agent_message",
+    "sender": "Qwen (QC)",
+    "content": "✅ Format check **PASSED**. Forwarding to Gemini Pro for detailed review.",
+    "timestamp": "2026-04-02T14:31:56.639661"
+  },
+  {
+    "type": "agent_message",
+    "sender": "Archivist (Web DB)",
+    "content": "🌐 Found relevant web results from Web Search Library DB. Injecting 3704 chars.",
+    "timestamp": "2026-04-02T14:32:16.935261"
+  },
+  {
+    "type": "agent_message",
+    "sender": "Gemini Flash (Writer)",
+    "content": "✍️ Chapter draft complete (6338 chars). Sending for review.",
+    "timestamp": "2026-04-02T14:32:30.895626"
+  },
+  {
+    "type": "agent_message",
+    "sender": "Qwen (QC)",
+    "content": "✅ Format check **PASSED**. Forwarding to Gemini Pro for detailed review.",
+    "timestamp": "2026-04-02T14:32:44.285833"
+  },
+  {
+    "type": "agent_message",
+    "sender": "Archivist (Web DB)",
+    "content": "🌐 Found relevant web results from Web Search Library DB. Injecting 3704 chars.",
+    "timestamp": "2026-04-02T14:33:08.773045"
+  },
+  {
+    "type": "agent_message",
+    "sender": "Gemini Flash (Writer)",
+    "content": "✍️ Chapter draft complete (6608 chars). Sending for review.",
+    "timestamp": "2026-04-02T14:33:22.611066"
+  },
+  {
+    "type": "agent_message",
+    "sender": "Qwen (QC)",
+    "content": "✅ Format check **PASSED**. Forwarding to Gemini Pro for detailed review.",
+    "timestamp": "2026-04-02T14:33:37.287459"
+  },
+  {
+    "type": "agent_message",
+    "sender": "Archivist (Web DB)",
+    "content": "🌐 Found relevant web results from Web Search Library DB. Injecting 3704 chars.",
+    "timestamp": "2026-04-02T14:33:57.076223"
+  },
+  {
+    "type": "agent_message",
+    "sender": "Gemini Flash (Writer)",
+    "content": "✍️ Chapter draft complete (6571 chars). Sending for review.",
+    "timestamp": "2026-04-02T14:34:15.586009"
+  },
+  {
+    "type": "agent_message",
+    "sender": "Qwen (QC)",
+    "content": "✅ Format check **PASSED**. Forwarding to Gemini Pro for detailed review.",
+    "timestamp": "2026-04-02T14:34:29.635474"
+  },
+  {
+    "type": "agent_message",
+    "sender": "Archivist (Web DB)",
+    "content": "🌐 Found relevant web results from Web Search Library DB. Injecting 3704 chars.",
+    "timestamp": "2026-04-02T14:34:54.386304"
+  },
+  {
+    "type": "agent_message",
+    "sender": "Gemini Flash (Writer)",
+    "content": "✍️ Chapter draft complete (8438 chars). Sending for review.",
+    "timestamp": "2026-04-02T14:35:09.958084"
+  },
+  {
+    "type": "agent_message",
+    "sender": "Qwen (QC)",
+    "content": "✅ Format check **PASSED**. Forwarding to Gemini Pro for detailed review.",
+    "timestamp": "2026-04-02T14:35:26.906844"
+  },
+  {
+    "type": "agent_message",
+    "sender": "Supervisor (Coach)",
+    "content": "📝 Coaching Intervention: Rewrote chapter draft directly. Sending to critique cycle (skipping Writer).",
+    "timestamp": "2026-04-02T14:36:13.104373"
+  },
+  {
+    "type": "agent_message",
+    "sender": "Archivist (Web DB)",
+    "content": "🌐 Found relevant web results from Web Search Library DB. Injecting 3704 chars.",
+    "timestamp": "2026-04-02T14:36:16.371530"
+  },
+  {
+    "type": "agent_message",
+    "sender": "Gemini Flash (Writer)",
+    "content": "✍️ Chapter draft complete (7965 chars). Sending for review.",
+    "timestamp": "2026-04-02T14:36:34.551500"
+  },
+  {
+    "type": "agent_message",
+    "sender": "Qwen (QC)",
+    "content": "✅ Format check **PASSED**. Forwarding to Gemini Pro for detailed review.",
+    "timestamp": "2026-04-02T14:39:34.924764"
+  },
+  {
+    "type": "agent_message",
+    "sender": "Archivist (Web DB)",
+    "content": "🌐 Found relevant web results from Web Search Library DB. Injecting 3704 chars.",
+    "timestamp": "2026-04-02T14:39:58.893435"
+  },
+  {
+    "type": "agent_message",
+    "sender": "Gemini Flash (Writer)",
+    "content": "✍️ Chapter draft complete (9314 chars). Sending for review.",
+    "timestamp": "2026-04-02T14:40:20.864999"
+  },
+  {
+    "type": "agent_message",
+    "sender": "Qwen (QC)",
+    "content": "✅ Format check **PASSED**. Forwarding to Gemini Pro for detailed review.",
+    "timestamp": "2026-04-02T14:40:49.229721"
+  },
+  {
+    "type": "agent_message",
+    "sender": "Supervisor (Coach)",
+    "content": "📝 Coaching Intervention: Rewrote chapter draft directly. Sending to critique cycle (skipping Writer).",
+    "timestamp": "2026-04-02T14:41:59.351826"
+  },
+  {
+    "type": "agent_message",
+    "sender": "Archivist (Web DB)",
+    "content": "🌐 Found relevant web results from Web Search Library DB. Injecting 3704 chars.",
+    "timestamp": "2026-04-02T14:42:02.520580"
+  },
+  {
+    "type": "agent_message",
+    "sender": "Gemini Flash (Writer)",
+    "content": "✍️ Chapter draft complete (7883 chars). Sending for review.",
+    "timestamp": "2026-04-02T14:42:17.021672"
+  },
+  {
+    "type": "agent_message",
+    "sender": "Supervisor",
+    "content": "🔧 Soft Intervention complete. Now self-evaluating the fixed draft before deciding next step.",
+    "timestamp": "2026-04-02T14:43:22.283289"
+  },
+  {
+    "type": "agent_message",
+    "sender": "Researcher",
+    "content": "조사 결과를 정리해서 보고서를 작성했습니다. Supervisor, 검토 부탁드립니다. 📝",
+    "timestamp": "2026-04-02T14:43:22.288061"
+  },
+  {
+    "type": "agent_message",
+    "sender": "Qwen (QC)",
+    "content": "✅ Format check **PASSED**. Forwarding to Gemini Pro for detailed review.",
+    "timestamp": "2026-04-02T14:43:22.512456"
+  },
+  {
+    "type": "agent_message",
+    "sender": "Supervisor",
+    "content": "이번이 7번째 시도야. 1. **Missing Leadership Category**: You completely omitted the \"Leadership\" category in your keyword taxonomy table. 이번에는 확실히 수정해.",
+    "timestamp": "2026-04-02T14:43:36.983613"
+  },
+  {
+    "type": "agent_message",
+    "sender": "Archivist (Web DB)",
+    "content": "🌐 Found relevant web results from Web Search Library DB. Injecting 3704 chars.",
+    "timestamp": "2026-04-02T14:43:43.233165"
+  },
+  {
+    "type": "agent_message",
+    "sender": "Gemini Flash (Writer)",
+    "content": "✍️ Chapter draft complete (6968 chars). Sending for review.",
+    "timestamp": "2026-04-02T14:43:58.934616"
+  },
+  {
+    "type": "agent_message",
+    "sender": "Researcher",
+    "content": "챕터 4 '1.1.4 Localization and Search Query Optimization for Korean and Italian Media' 작성 중입니다... (v8) ✍️",
+    "timestamp": "2026-04-02T14:44:17.042458"
+  },
+  {
+    "type": "agent_message",
+    "sender": "Qwen (QC)",
+    "content": "✅ Format check **PASSED**. Forwarding to Gemini Pro for detailed review.",
+    "timestamp": "2026-04-02T14:44:22.211112"
+  },
+  {
+    "type": "agent_message",
+    "sender": "Supervisor",
+    "content": "좋아, 이 정도면 품질 기준을 충족해. 다음 단계로 넘어가자.",
+    "timestamp": "2026-04-02T14:44:36.054285"
+  },
+  {
+    "type": "agent_message",
+    "sender": "Supervisor",
+    "content": "이번 태스크는 'Media Data Collection and Sentiment Analysis (Part B.1 & B.2)'야. SUPERVISOR, 진행해줘.",
+    "timestamp": "2026-04-02T14:44:36.073729"
+  },
+  {
+    "type": "agent_message",
+    "sender": "Plan Refiner",
+    "content": "Step 1의 세부 실행 계획을 수립했습니다. 4개의 sub-step으로 분할: 'Media Coverage Data Collection and Verification', 'Sentiment Trajectory and Adjective Frequency Analysis', 'Competitive Sentiment Benchmarking (vs. Apple & Google)'.... Supervisor에게 보고합니다. 📋",
+    "timestamp": "2026-04-02T14:44:55.574978"
+  },
+  {
+    "type": "agent_message",
+    "sender": "Supervisor",
+    "content": "좋아, Researcher 팀에게 넘기겠어. 시작해줘.",
+    "timestamp": "2026-04-02T14:44:55.602841"
+  },
+  {
+    "type": "agent_message",
+    "sender": "Researcher",
+    "content": "작업 결과를 보고합니다: DELEGATE_DEEP_RESEARCH: Conduct targeted web searches for global media coverage of Samsung Design and Mauro Porcini from April 2025 to present.",
+    "timestamp": "2026-04-02T14:45:00.060243"
+  },
+  {
+    "type": "agent_message",
+    "sender": "Supervisor",
+    "content": "좋아, Deep Researcher 팀에게 넘기겠어. 시작해줘.",
+    "timestamp": "2026-04-02T14:45:00.093890"
+  }
+]

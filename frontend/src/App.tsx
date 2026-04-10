@@ -24,13 +24,13 @@ function App() {
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
   const wsUrl = `${protocol}//${window.location.host}/api/ws`;
 
-  const { logs, dialogue, currentSlideCode, sendMessage, sendCommand, isConnected } = useAgentWebSocket(wsUrl, threadId);
+  const { logs, dialogue, currentSlideCode, progress, sendMessage, sendCommand, isConnected } = useAgentWebSocket(wsUrl, threadId);
 
   return (
-    <div className="flex h-screen w-screen bg-cyber-dark text-cyber-text overflow-hidden font-sans">
+    <div className="flex flex-col md:flex-row h-[100dvh] w-[100dvw] bg-cyber-dark text-cyber-text overflow-hidden font-sans">
 
-      {/* Left Panel: Communication & Control (30%) */}
-      <div className="w-[30%] flex flex-col border-r border-cyber-border z-10 shadow-xl h-full">
+      {/* Left Panel: Communication & Control (Responsive: 50% height on mobile, 30% width on tablet/desktop) */}
+      <div className="w-full md:w-[30%] lg:w-[25%] flex flex-col border-b md:border-b-0 md:border-r border-cyber-border z-10 shadow-xl h-[45%] md:h-full shrink-0">
         <div className="flex-1 min-h-0 overflow-hidden">
           <ChatPanel
             onSendMessage={sendMessage}
@@ -45,19 +45,19 @@ function App() {
         <Terminal logs={logs} />
       </div>
 
-      {/* Right Panel: Infinite Preview (70%) */}
-      <div className="w-[70%] relative bg-black">
+      {/* Right Panel: Infinite Preview (Responsive: 55% height on mobile, 70% width on tablet/desktop) */}
+      <div className="w-full md:w-[70%] lg:w-[75%] relative bg-black flex-1 min-h-0">
         {/* Artifact Viewer Toggle */}
         <button
           onClick={() => setShowArtifacts(true)}
-          className="absolute top-4 right-4 z-40 p-2 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded text-xs text-cyber-text transition-all"
+          className="absolute top-2 right-2 md:top-4 md:right-4 z-40 p-1.5 md:p-2 bg-slate-800/80 hover:bg-slate-700 border border-slate-600 rounded text-[10px] md:text-xs text-cyber-text transition-all backdrop-blur-sm"
         >
           📂 OPEN ARTIFACT VIEWER
         </button>
 
         {showArtifacts && <ArtifactViewer onClose={() => setShowArtifacts(false)} threadId={threadId} />}
 
-        <SlidePreview code={currentSlideCode} />
+        <SlidePreview code={currentSlideCode} progress={progress} />
       </div>
 
     </div>

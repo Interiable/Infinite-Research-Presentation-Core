@@ -5,13 +5,20 @@ from datetime import datetime
 
 # Resolve absolute path to data directory
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-DATA_DIR = os.path.join(BASE_DIR, "data")
-DB_PATH = os.path.join(DATA_DIR, "research_vault.sqlite")
+PROJECTS_DIR = os.path.join(BASE_DIR, "data", "projects")
 
-def init_vault():
-    """Initializes the research data vault."""
-    os.makedirs(DATA_DIR, exist_ok=True)
-    conn = sqlite3.connect(DB_PATH)
+def get_db_path(project_id: str = "default") -> str:
+    """Returns the path to the research vault db for a given project."""
+    if not project_id:
+        project_id = "default"
+    project_dir = os.path.join(PROJECTS_DIR, project_id)
+    os.makedirs(project_dir, exist_ok=True)
+    return os.path.join(project_dir, "research_vault.sqlite")
+
+def init_vault(project_id: str = "default"):
+    """Initializes the research data vault for the project."""
+    db_path = get_db_path(project_id)
+    conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS web_research (
@@ -28,9 +35,10 @@ def init_vault():
     conn.commit()
     conn.close()
 
-def log_web_research(query, title, url, snippet, file_path=None, full_content=None):
+def log_web_research(query, title, url, snippet, file_path=None, full_content=None, project_id="default"):
     """Logs a piece of web research into the vault."""
-    conn = sqlite3.connect(DB_PATH)
+    db_path = get_db_path(project_id)
+    conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
     cursor.execute("""
         INSERT INTO web_research (query, title, source_url, snippet, file_path, full_content)
@@ -39,15 +47,22 @@ def log_web_research(query, title, url, snippet, file_path=None, full_content=No
     conn.commit()
     conn.close()
 
-def get_recent_research(query=None, limit=10):
-    """Retrieves recent research."""
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    if query:
-        cursor.execute("SELECT * FROM web_research WHERE query LIKE ? ORDER BY timestamp DESC LIMIT ?", (f"%{query}%", limit))
-    else:
-        cursor.execute("SELECT * FROM web_research ORDER BY timestamp DESC LIMIT ?", (limit,))
+def get_recent_research(query=None, limit=10, project_id="default"):
+    """Retrieves recent research for a project."""
+    db_path = get_db_path(project_id)
+    if not os.path.exists(db_path):
+        return []
     
-    rows = cursor.fetchall()
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    try:
+        if query:
+            cursor.execute("SELECT * FROM web_research WHERE query LIKE ? ORDER BY timestamp DESC LIMIT ?", (f"%{query}%", limit))
+        else:
+            cursor.execute("SELECT * FROM web_research ORDER BY timestamp DESC LIMIT ?", (limit,))
+        rows = cursor.fetchall()
+    except sqlite3.OperationalError:
+        rows = []
+    
     conn.close()
     return rows

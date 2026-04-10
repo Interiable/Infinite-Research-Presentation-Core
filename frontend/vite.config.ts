@@ -7,14 +7,16 @@ export default defineConfig({
   server: {
     port: 5174,
     strictPort: true,
-    allowedHosts: true, // Allow all hosts (tunneling)
-    hmr: {
-      clientPort: 443, // Force client to use HTTPS port (Tunnel) instead of 5174
-    },
+    host: true, // Listen on all addresses
+    allowedHosts: ['all'], // Allow all hosts for tunneling
+    // hmr: {
+    //   clientPort: 443, // DISABLED: Only for specific tunnel setups
+    // },
     proxy: {
       '/api': {
         target: 'http://localhost:8000',
         changeOrigin: true,
+        secure: false,
         ws: true, // Enable WebSockets properly
       },
     }

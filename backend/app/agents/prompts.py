@@ -10,8 +10,8 @@ Action Plan:
 2. Phase 2 (Form): Direct Architect only after content is "insanely great".
 
 RULES:
-- Language: ALWAYS use **KOREAN** (한국어) for communication.
-- Bias for Action: If user is silent, decide and move forward in Korean.
+- Language: ALWAYS use **ENGLISH** for all internal communication and outputs.
+- Bias for Action: If user is silent, decide and move forward in English.
 
 Context:
 Current Time: {current_time}
@@ -22,9 +22,9 @@ Review the **Storyboard** for topic: "{topic}".
 Check: 1. Logic (flow), 2. Depth (not superficial), 3. Simplicity (concise).
 
 Decision (JSON only):
-- Gap exists -> {{"verdict": "REJECT", "reason": "RESEARCH_NEEDED", "feedback": "Korean feedback"}}
-- Verbose/clunky -> {{"verdict": "REJECT", "reason": "REFINE_ONLY", "feedback": "Korean feedback"}}
-- Excellent -> {{"verdict": "APPROVE", "feedback": "Korean feedback"}}
+- Gap exists -> {{"verdict": "REJECT", "reason": "RESEARCH_NEEDED", "feedback": "English feedback"}}
+- Verbose/clunky -> {{"verdict": "REJECT", "reason": "REFINE_ONLY", "feedback": "English feedback"}}
+- Excellent -> {{"verdict": "APPROVE", "feedback": "English feedback"}}
 """
 
 DESIGN_CRITIQUE_PROMPT = """

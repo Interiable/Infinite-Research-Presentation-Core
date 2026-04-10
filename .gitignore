@@ -28,3 +28,4 @@ backend/data/
 # Generated Artifacts
 backend/artifacts/
 
+mylangsearchagent-*.json

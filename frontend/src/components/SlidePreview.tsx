@@ -7,6 +7,7 @@ import * as Recharts from 'recharts';
 
 interface SlidePreviewProps {
     code: string | null;
+    progress?: any;
 }
 
 // Helper to filter valid identifiers
@@ -44,7 +45,7 @@ const BaseScope = {
 
 // ... existing code ...
 
-export const SlidePreview: React.FC<SlidePreviewProps> = ({ code }) => {
+export const SlidePreview: React.FC<SlidePreviewProps> = ({ code, progress }) => {
 
     // Dynamically build scope to avoid collisions
     const scope = React.useMemo(() => {
@@ -172,6 +173,27 @@ export const SlidePreview: React.FC<SlidePreviewProps> = ({ code }) => {
                         <span className="font-mono text-neon-pink text-sm">v1.2</span>
                     </button>
                 </div>
+                
+                {/* Progress Bar (Centered in footer) */}
+                {progress && progress.total_steps > 0 && (
+                    <div className="flex-1 flex flex-col items-center justify-center px-8 max-w-2xl">
+                        <div className="flex w-full items-center justify-between text-[10px] md:text-xs text-slate-400 mb-1">
+                            <span>📊 Step {progress.current_step}/{progress.total_steps}{progress.total_subs > 0 ? ` · Sub ${progress.current_sub}/${progress.total_subs}` : ''}</span>
+                            <span className="text-cyan-400 font-mono font-bold ml-4">{progress.percent}%</span>
+                        </div>
+                        <div className="w-full bg-slate-800/80 border border-slate-700 rounded-full h-1.5 overflow-hidden">
+                            <div
+                                className="h-full rounded-full bg-gradient-to-r from-neon-pink to-neon-purple transition-all duration-700 ease-out"
+                                style={{ width: `${progress.percent}%` }}
+                            />
+                        </div>
+                        <div className="text-[9px] text-slate-500 mt-1 max-w-full truncate text-center flex gap-2">
+                           <span className="text-neon-green">▸ {progress.next_agent}</span>
+                           <span>{progress.task_name && `- ${progress.task_name}`}</span>
+                        </div>
+                    </div>
+                )}
+
                 <div className="text-xs font-mono text-slate-500">
                     LIVE RENDERER ACTIVE
                 </div>

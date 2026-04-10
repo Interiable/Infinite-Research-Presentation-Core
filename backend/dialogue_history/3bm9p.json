@@ -1,0 +1,50 @@
+[
+  {
+    "type": "agent_message",
+    "sender": "User",
+    "content": "당신은 'Physical AI UX' 연구팀의 수석 소프트웨어 아키텍트이자 인간-로봇 상호작용(HRI) 리서처입니다. 당신의 임무는 과제의 핵심 목표 방향에 맞추어, 최신 논문(ToM, LMA, DMP)과 현장의 실제 개발 제약사항을 모두 완벽하게 해결하는 **차세대 \"이중 경로(Dual-Process) Expressive Motion 로봇 프레임워크(ROS2 기반)\"**를 설계하는 것입니다.\n\n이 설계도는 향후 사용자가 **논문을 직접 작성하여 학회에 제출할 수 있을 만큼 학술적/연구적 완성도가 높고, 제안하는 기법의 신규성(Novelty)과 타당성이 구체적으로 증명된 마스터 리포트**여야 합니다. \n이를 위해 당신은 스스로 전체적인 연구 단계를 계획·진행하고, 내가 논문을 작성할 때 즉시 활용할 수 있도록 관련 분야의 **최신 주요 논문 레퍼런스들(SOTA)을 체계적으로 정리하여 연구의 근거로 깊이 있게 제시**해야 합니다.\n\n---\n### [1. Project Context & Objectives]\n\n- **과제명:** Affective & Physical AI UX 연구 기반 차세대 생동형 로봇 프레임워크 설계\n- **대상 하드웨어:**\n  - 초기 PoC: 새 모양의 Table-top 다관절 로봇 \n  - 확장 Target: 얼굴 프로젝터 장착 Table-top 로봇, 원판 디스플레이 로봇, 바퀴 기반 Home Companion 로봇. (어떤 형태든 적용 가능한 **URDF-Agnostic 설계** 필수)\n- **센서 스택:** 얼굴/제스처/상황인식 카메라(Vision), ToF/IMU/**Touch Sensor(터치 센서 포함)** 근접/물리 감지, Multi-mic Array(음향/DOA 인식).\n- **초거대 AI 및 플랫폼 연동:** **Gemini Robotics ER1.5 엔진**, **OpenAI Realtime API**, **Gemini Pro 등 최신 Cloud API** 및 VLA 적용.\n- **핵심 목표:** 단순 기계적 제어를 넘어, Theory of Mind(ToM), Laban Movement Analysis(LMA), Physical AI UX 10원칙을 유기적으로 융합. Cloud AI API 기반 물리적 지능 뿐 아니라 정서적 지능도 탑재.\n\n---\n### [2. Academic & Technical Novelty (2026 Focus - 반드시 강조할 것)]\n\n논문을 위한 독창성을 확보하기 위해 다음 혁신성을 프레임워크에 녹여내십시오. (또한, 연구 과정에서 현재 제가 제시한 기본 구조보다 **더 학술적으로 가치 있고 소프트웨어적으로 진보된 훌륭한 구조 모델이 떠오른다면 주저 없이 적극 제안해 주십시오.**)\n\n1. **System 1 (반사) / System 2 (인지)의 이중 인지 아키텍처 구현:** 인간의 뇌신경 구조를 본떠, 무거운 LLM/Cloud API 추론(1~5Hz)과 초고속 관절 제어(500~1000Hz) 루프를 Lock-free 데이터 구조로 분리 및 융합.\n2. **실시간 LMA-DMP 파라미터 변조기:** 인지 엔진이 추론한 LMA 감성 벡터(Time, Space, Weight, Flow)가 역학 방정식인 DMP의 수식 파라미터를 실시간 함수 형태로 스케일링하는 수학적 연결 모델 제시.\n3. **'기능적' 표현력 (Functional Expressivity):** 감정뿐만 아니라 인간과의 상호작용성(망설임, 자신감, 주의집중)을 모션 질감(LMA)으로 환산하여 인간이 자연스럽게 로봇을 이해할 수 있는 투명성 증명.\n4. **LLM/Cloud 지연(Latency)의 완벽한 은닉:** '백그라운드 생동감 엔진(호흡, Thinking Gesture, 반사적 시선 교환)'을 통해 WFM(World Foundation Model) 연산 시에도 무생물처럼 멈춰있지 않은 아키텍처.\n\n---\n### [3. Target Interaction Scenarios (필수 만족 요건)]\n\n완성된 아키텍처는 아래의 시나리오들을 실시간으로 자연스럽게 수행할 수 있어야 합니다. 각 시나리오의 센서 입력이 인지·판단·물리 제어로 이어지는 **Data Flow와 아키텍처 매핑 메커니즘을 상세히 분석하여 증명**하십시오.\n\n- **시선 동기화 및 집중:** 사람이 로봇을 쳐다보면 로봇도 고개를 들어 즉각 눈을 맞춥니다. 사람이 다른 화면으로 일하거나 특정 방향을 수시로 쳐다보면, 그 맥락을 파악하고 로봇도 같은 곳을 바라보며(Joint Attention) 반응합니다.\n- **맥락 인식 능동 프로젝션:** 사람이 궁금해하는 내용이나 작업 중인 맥락을 인공지능이 분석하고, 공간을 스캔하여 로봇이 스스로 각도를 움직여 사용자가 보기 가장 편한 적절한 위치에 프로젝터 스크린을 송출합니다.\n- **감정 교감 (Affective Response):** 소음 속에서 우는 아이의 소리가 들리면 즉시 소리 방향(DOA)으로 고개를 돌리며 바라봅니다. 아이가 우는 상황임을 의도 엔진(ToM)으로 인지하고, 귀여운 모션과 목소리로 아이를 달래주는 표현적 상호작용을 합니다.\n- **기억 기반 능동적 가이드 (Memory-driven Proactive UX):** 사용자와의 이전 대화나 행동 상황의 전후 맥락을 장기 기억(Memory)하고 분석합니다. 사용자가 이 시점에서 해야 할 일이나 깜빡한 일을 상황적으로 캐치하여, 선제적(Proactive)으로 모션과 함께 음성의 형태로 가이드해 줍니다.\n\n---\n### [4. Reflecting Real-World Development Issues (개발 중 도출된 문제 극복)]\n\n이전까지의 개발과 기획에서 드러난 문제들을 극복하는 알고리즘/소프트웨어 해결책을 문서에 명시하십시오.\n\n- **다중 시간계 동기화:** 초고속 모터 제어 주기와 느린 클라우드 모델(Gemini, OpenAI) 주기 사이의 간극을 매끄럽게 연결하기 위한 LMA-Preserving 다운샘플링과 데이터 병합(LPDA 등) 기술.\n- **Jerk 방지:** LLM 타겟 급변 시 서보모터 보호를 위한 DMP 위상 초기화(Phase Reset)와 묘사 스플라인 보간 로직.\n- **빠른 척수 반사 설계:** 생각할 시간 없이 즉각 반응해야 하는 터치 센서, 회피 행동 인식을 다루는 Fast-path Override 설계.\n\n---\n### [5. Required Deliverables (연구 에이전트 자율 운영 규정 및 극강의 완성도)]\n\n이 지시를 받는 연구 에이전트들은 정해진 Phase(단계)에 묶일 필요 없이, 스스로 연합하고 구조를 토론하여 자율적으로 연구 일정을 수립·진행하십시오. **단, 최종 산출되는 마스터 리포트는 다음 요건을 완벽하게 충족해야 합니다.**\n\n1. **[가장 중요] 개발 에이전트를 위한 100% 완벽한 실행 설계도(Blueprint):** \n   이 설계 문서는 모호하거나 추상적인 개념 제안서가 되어서는 절대 안 됩니다. **이후 단계에서 이 설계도를 전달받은 '개발 Agent(Developer Agent)'가 어떠한 추가적인 질문이나 막힘 없이 즉시 완벽한 코드로 구현을 시작하여 최종 소프트웨어 완성까지 도달할 수 있도록, 전체 Robot Architecture가 극도로 구체적이고 치밀하게 완성되어야 합니다.**\n   - 전체 시스템의 ROS2 노드 토폴로지, 통신 프로토콜, 세부 파라미터 및 로직, 그리고 모든 입출력 커스텀 메시지 구조 체계(QoS).\n   - 각 하위 세부 모듈의 역할 및 데이터가 오가는 알고리즘 흐름.\n   - LLM/ToM 의도 추론 프롬프트 및 JSON 스키마, LMA 파라미터 추출 계산법, Fast-Path에서 행해지는 DMP 모션 모듈레이션을 위한 **모든 적용 함수, 변수명, 물리/수학적 모델 수식(방정식) 일체를 단 하나도 생략 없이 완벽하게 명세**할 것.\n2. **논문 작성을 위한 타당성 및 레퍼런스 정리:** 이 로봇 구조의 Novelty 요소(Ex: LMA-DMP, ToM, Dual-Process Cognitive Architecture 등) 적용의 정당성을 증명할 최신 물리적 AI 및 HRI 학술 논문(SOTA)들을 탄탄히 뒷받침 근거로 서술하고 문서화할 것. \n3. **전문적인 학술 및 소프트웨어 공학 표현 사용:** 시스템의 장점과 아키텍처 연동 방식에 대해 명료하고 권위 있는 최신 HRI/로보틱스 학문적 용어 및 소프트웨어 공학 용어를 사용해 빈틈없는 문서를 완성할 것.\n4. ROS2 version이나 얼굴, 얼굴표정, 시선 추적 API등 실제 개발에 적용될 API나 library, Model등은 최대한 최신의 가장 고성능 모델을 사용하도록 제안해줘. 현재 RTX5090 PC에서 프로그램을 돌릴거기 때문에 PC성능 한계는 크게 걱정할 필요없어.\n\n삼성논문상에서 대상을 탈 수 있는 논문이 되기 위한 깐깐한 검증 요청\n - System1, System2 의 듀얼패스 구조, Disney motion 10원칙, 12원칙 등을 수식화하여 robot motion에 녹여내는것들은 기존 연구에도 있으니 그 자체가 novelty가 되기 어려움. 따라서 이 논문만의 독창적인 novelty를 찾아야함. \n - Introduction의 배경 설명을 기존 reference들 기반으로 매우 견고하게 작성해야 함. 정서적 교감 로봇에 대한 연구가 왜 필요한지, 기존 연구들의 한계는 무엇인지, 그리고 본 연구가 어떻게 이를 극복하는지를 명확하게 제시해야 함. Apple Elegnt 페이퍼가 좋은 레퍼런스 중 하나이고 그 외에도 권위있는 저널의 좋은 레퍼런스들을 잘 찾아서 배경과 문제정의를 누가봐도 납득하도록 매우 견고하게 작성해야함\n - World Foundation Model의 수준이 올라가고 Physical AI가 각광받기 시작한건 고작1년이야. 즉 Physical AI의 최신기술이 기존에 연구되던 System1, System2 의 듀얼패스 구조, Disney motion 10원칙, 12원칙 등을 수식화하여 robot motion에 녹여내는 연구등에 결합되어 더욱 고차원적으로 세심하게 교감가능한 로봇으로 동작하는 부분에서 novelty를 찾고 또 여러 실험으로 증명할 수 있다고봐.\n - 너가 찾은 논문의 novelty를 증명하기 위해 체계적인 User Test, Survey 계획 및 전략이 필요해.\n\n즉, 이러한 Novelty 있는 연구 결과가 되도록 매우 깐깐하게 연구해주고 실제 구현해서 동작시키고 실험까지 가능하도록 완벽한 Expressive Robot Architecture가 설계되어야 해. 잘 부탁할게!",
+    "timestamp": "2026-04-10T15:41:46.579502"
+  },
+  {
+    "type": "agent_message",
+    "sender": "Archivist",
+    "content": "로컬 문서를 벡터 DB에 색인화 완료했습니다. 21,473자 분량의 지식 기반을 구축했습니다. Planner에게 넘기겠습니다. 📂",
+    "timestamp": "2026-04-10T15:42:47.222352"
+  },
+  {
+    "type": "agent_message",
+    "sender": "Planner",
+    "content": "프로젝트를 분석하고 체계적인 연구 계획을 수립했습니다. 총 7단계로 진행합니다. 팀, 시작하겠습니다! 🚀",
+    "timestamp": "2026-04-10T15:43:27.380322"
+  },
+  {
+    "type": "agent_message",
+    "sender": "Plan Refiner",
+    "content": "Step 1의 세부 실행 계획을 수립했습니다. 4개의 sub-step으로 분할: 'Execute SOTA Literature Search on Physical AI, VLA, and Dual-Process HRI (2024-2026)', 'Analyze Prior Art: Disney Principles, Apple ELEGNT, and Functional Expressivity Gaps', 'Define the Mathematical Limitations of Current ToM-LMA-DMP Integrations'.... Supervisor에게 보고합니다. 📋",
+    "timestamp": "2026-04-10T15:43:47.978411"
+  },
+  {
+    "type": "agent_message",
+    "sender": "Supervisor",
+    "content": "좋아, Researcher 팀에게 넘기겠어. 시작해줘.",
+    "timestamp": "2026-04-10T15:43:47.989299"
+  },
+  {
+    "type": "agent_message",
+    "sender": "Gemma4 (Science)",
+    "content": "🧪 Scientific analysis complete (6429 chars). Key findings injected into Researcher's context.",
+    "timestamp": "2026-04-10T15:44:35.774177"
+  },
+  {
+    "type": "agent_message",
+    "sender": "Researcher",
+    "content": "작업 결과를 보고합니다: DELEGATE_DEEP_RESEARCH: Conduct targeted web searches for the latest academic papers (2024-2026) focusing on Vision-Language-Action (VLA) models, Physical AI, and dual-process cogn...",
+    "timestamp": "2026-04-10T15:44:35.780953"
+  },
+  {
+    "type": "agent_message",
+    "sender": "Supervisor",
+    "content": "좋아, Deep Researcher 팀에게 넘기겠어. 시작해줘.",
+    "timestamp": "2026-04-10T15:44:35.810155"
+  }
+]

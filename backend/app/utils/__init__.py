@@ -1,5 +1,25 @@
 import os
 import datetime
+from typing import Any, List, Dict
+
+def log_night_audit(node_name: str, message: str):
+    """
+    Appends an error or audit message to a central night_audit_log.md file.
+    """
+    timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    log_entry = f"\n### [{timestamp}] {node_name}\n- {message}\n"
+    
+    current_file_dir = os.path.dirname(os.path.abspath(__file__))
+    app_dir = os.path.dirname(current_file_dir)
+    backend_dir = os.path.dirname(app_dir)
+    log_path = os.path.join(backend_dir, "artifacts", "night_audit_log.md")
+    
+    try:
+        with open(log_path, "a", encoding="utf-8") as f:
+            f.write(log_entry)
+        print(f"📡 Night Audit Logged: {node_name}")
+    except Exception as e:
+        print(f"❌ Failed to log night audit: {e}")
 
 def save_artifact(name: str, content: str, extension: str = "md", thread_id: str = None):
     """
@@ -43,106 +63,158 @@ def save_artifact(name: str, content: str, extension: str = "md", thread_id: str
         print(f"❌ Failed to save artifact: {e}")
         return None
 
+def extract_text_content(ai_output: Any) -> str:
+    """
+    Robustly extracts string content from varied AI model responses.
+    Handles:
+    - Pure strings
+    - LangChain AIMessage objects
+    - Lists of dicts (Gemini/OpenAI structured format)
+    - Dicts with 'text' or 'content' keys
+    """
+    if ai_output is None:
+        return ""
+    
+    # 1. Handle Strings
+    if isinstance(ai_output, str):
+        return ai_output
+    
+    # 2. Handle LangChain Messages
+    if hasattr(ai_output, "content"):
+        return extract_text_content(ai_output.content)
+    
+    # 3. Handle Lists (Common in structured Gemini outputs)
+    if isinstance(ai_output, list):
+        text_parts = []
+        for item in ai_output:
+            text_parts.append(extract_text_content(item))
+        return " ".join(text_parts).strip()
+    
+    # 4. Handle Dictionaries
+    if isinstance(ai_output, dict):
+        # Look for typical keys
+        for key in ["text", "content", "message", "body"]:
+            if key in ai_output:
+                return extract_text_content(ai_output[key])
+        return str(ai_output)
+    
+    return str(ai_output)
+
 # --- ROBUST LLM WRAPPER ---
 # --- ROBUST LLM WRAPPER (POLYGLOT) ---
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_openai import ChatOpenAI
+from langchain_core.messages import HumanMessage
 
 class RobustGemini:
     """
     Wrapper for Google Gemini that handles Quota Exhaustion (429) AND Model Not Found (404).
+    Wrapper for Google Gemini that handles Quota Exhaustion (429) AND Model Not Found (404).
     Fallback Strategy:
-    1. Gemini Pro (Primary)
-    2. OpenAI GPT-5.2 (Secondary - High Quality Fallback)
-    3. Gemini Flash (Tertiary - Ultimate Fallback)
+    1. Gemini 3.1 Pro (Primary)
+    2. Gemini 3 Pro (1st Backup - Equivalent Quality)
+    3. OpenAI GPT-5.2 (2nd Backup - High Quality Fallback)
+    4. Gemini Flash (Ultimate Fallback)
     """
-    def __init__(self, pro_model_name="gemini-3-pro-preview", flash_model_name="gemini-3-flash-preview", temperature=0.0):
+    def __init__(self, pro_model_name="gemini-3.1-pro-preview", flash_model_name="gemini-3-flash-preview", temperature=0.0):
         self.pro_model_name = pro_model_name
         self.flash_model_name = flash_model_name
         self.temperature = temperature
         self.google_api_key = os.getenv("GOOGLE_API_KEY")
         self.openai_api_key = os.getenv("OPENAI_API_KEY")
         
-        # 1. Primary: Gemini Pro
+        # 1. Primary: Gemini 3.1 Pro
         self.llm_pro = ChatGoogleGenerativeAI(
             model=pro_model_name, 
             temperature=temperature, 
-            google_api_key=self.google_api_key
+            google_api_key=self.google_api_key,
+            timeout=300,
+            max_retries=2
         )
         
-        # 2. Secondary: OpenAI GPT-5.2 (High Quality Fallback)
+        # 2. 1st Backup: Gemini 3 Pro (Same class)
+        self.llm_pro_backup = ChatGoogleGenerativeAI(
+            model="gemini-3-pro-preview", 
+            temperature=temperature, 
+            google_api_key=self.google_api_key,
+            timeout=300,
+            max_retries=2
+        )
+        
+        # 3. 2nd Backup: OpenAI GPT-5.2
         self.llm_openai = None
         if self.openai_api_key:
-            # User specified reasoning={"effort": "none"} in example
-            # We pass this via model_kwargs if supported, or standard if Chat.
-            # Assuming standard ChatOpenAI works for now.
             try:
                 self.llm_openai = ChatOpenAI(
                     model="gpt-5.2",
                     temperature=temperature,
                     api_key=self.openai_api_key,
-                    # model_kwargs={"reasoning": {"effort": "none"}} # Commented out to suppress warning
+                    timeout=300,
+                    max_retries=2
                 )
             except Exception as e:
                 print(f"⚠️ OpenAI Init Failed: {e}")
         
-        # 3. Tertiary: Gemini Flash
+        # 4. Ultimate Backup: Gemini Flash
         self.llm_flash = ChatGoogleGenerativeAI(
             model=flash_model_name, 
             temperature=temperature, 
-            google_api_key=self.google_api_key
+            google_api_key=self.google_api_key,
+            timeout=300,
+            max_retries=2
         )
 
     def invoke(self, messages):
         import time
-        max_retries = 3
-        base_delay = 5  # Start with 5 seconds
+        max_retries = 2 # Reduced retries per model to move faster through tiers
+        base_delay = 3
 
+        # --- Tier 1: Gemini 3.1 Pro ---
         for attempt in range(max_retries):
             try:
-                # 1. Try Gemini Pro
                 return self.llm_pro.invoke(messages)
-                
             except Exception as e:
                 error_str = str(e)
-                
-                # Handle Quota / Not Found Errors
                 if "429" in error_str or "ResourceExhausted" in error_str:
                     wait_time = base_delay * (2 ** attempt)
-                    print(f"⚠️ Quota Exhausted (429). Retrying in {wait_time}s... (Attempt {attempt+1}/{max_retries})")
+                    print(f"⚠️ Tier 1 (3.1 Pro) Quota Exhausted. Retrying in {wait_time}s...")
                     time.sleep(wait_time)
-                    continue # Retry current model loop
-                    
-                elif "404" in error_str:
-                    print(f"⚠️ Primary Model Not Found (404): {self.pro_model_name}")
-                    # Move to fallbacks immediately for 404
-                    break 
-                else:
-                    # Other errors (e.g., Validation), re-raise
-                    raise e
+                    continue
+                break # Move to next tier for 404 or persistent 429
         
-        # --- Fallback Section (If all retries fail or 404/Quota persistent) ---
-        print(f"🔄 Moving to Fallback Strategy...")
-        
-        # 2. Try OpenAI Fallback
+        # --- Tier 2: Gemini 3 Pro (1st Backup) ---
+        print(f"🔄 Moving to Tier 2: Gemini 3 Pro...")
+        for attempt in range(max_retries):
+            try:
+                return self.llm_pro_backup.invoke(messages)
+            except Exception as e:
+                error_str = str(e)
+                if "429" in error_str or "ResourceExhausted" in error_str:
+                    wait_time = base_delay * (2 ** attempt)
+                    print(f"⚠️ Tier 2 (3 Pro) Quota Exhausted. Retrying in {wait_time}s...")
+                    time.sleep(wait_time)
+                    continue
+                break
+
+        # --- Tier 3: OpenAI GPT-5.2 (2nd Backup) ---
         if self.llm_openai:
-            print(f"🔄 Switching to Secondary Model: OpenAI GPT-5.2...")
+            print(f"🔄 Moving to Tier 3: OpenAI GPT-5.2...")
             try:
                 return self.llm_openai.invoke(messages)
             except Exception as openai_e:
-                print(f"⚠️ OpenAI Fallback Failed: {openai_e}. Moving to Flash.")
+                print(f"⚠️ Tier 3 (OpenAI) Failed: {openai_e}")
         
-        # 3. Try Flash Fallback
-        print(f"⚡ Switching to Tertiary Model: {self.flash_model_name}...")
+        # --- Tier 4: Gemini Flash (Ultimate) ---
+        print(f"⚡ Moving to Tier 4: {self.flash_model_name}...")
         try:
             return self.llm_flash.invoke(messages)
         except Exception as flash_e:
             if "429" in str(flash_e):
-                print("🚨 ALL MODELS EXHAUSTED (429). System must cool down.")
-                time.sleep(60) # Ultimate block
+                print("🚨 ALL MODELS EXHAUSTED (429).")
+                time.sleep(30)
             raise flash_e
 
-from langchain_community.tools.tavily_search import TavilySearchResults
+from langchain_tavily import TavilySearch
 
 class DeepResearcher:
     """
@@ -155,7 +227,7 @@ class DeepResearcher:
         self.llm = local_llm
         
         # Tavily Search Tool (Requires TAVILY_API_KEY in .env)
-        self.search = TavilySearchResults(
+        self.search = TavilySearch(
             max_results=5,
             search_depth="advanced", # Deep search mode
             include_answer=True,
@@ -196,7 +268,7 @@ class DeepResearcher:
             **INSTRUCTION:**
             1. Analyze the search results deeply.
             2. Extract key facts, statistics, and academic findings.
-            3. Synthesize a detailed answer in **KOREAN**.
+            3. Synthesize a detailed answer in **ENGLISH**.
             4. **CITE SOURCES**: Use the URLs provided.
             
             **CRITICAL: COLLABORATIVE RETRIEVAL MODE**
@@ -221,28 +293,106 @@ class DeepResearcher:
 # PDF Conversion Utility
 def convert_to_pdf(markdown_path: str, output_pdf_path: str = None):
     """
-    Converts a Markdown file to a PDF file using markdown-pdf.
+    Converts a Markdown file to a PDF file using playwright and custom CSS.
     """
+    import os
+    import asyncio
+    import markdown
+    from playwright.async_api import async_playwright
+
+    if not os.path.exists(markdown_path):
+        print(f"❌ Markdown file not found: {markdown_path}")
+        return False
+
+    if not output_pdf_path:
+        output_pdf_path = markdown_path.replace(".md", ".pdf")
+
     try:
-        from markdown_pdf import MarkdownPdf, Section
+        with open(markdown_path, 'r', encoding='utf-8') as f:
+            text = f.read()
 
-        if not os.path.exists(markdown_path):
-            print(f"❌ Markdown file not found: {markdown_path}")
-            return False
+        # Pre-process LaTeX math into styled HTML (works offline, no CDN needed)
+        import re as _re_math
+        # Display math: $$...$$ → centered, styled block
+        text = _re_math.sub(
+            r'\$\$(.+?)\$\$',
+            r'<div class="math-display">\1</div>',
+            text, flags=_re_math.DOTALL
+        )
+        # Inline math: $...$ → italic styled span (avoid matching $$ or currency)
+        text = _re_math.sub(
+            r'(?<!\$)\$(?!\$)(.+?)(?<!\$)\$(?!\$)',
+            r'<span class="math-inline">\1</span>',
+            text
+        )
 
-        if not output_pdf_path:
-            output_pdf_path = markdown_path.replace(".md", ".pdf")
+        html_content = markdown.markdown(text, extensions=['tables', 'fenced_code'])
 
-        pdf = MarkdownPdf(toc_level=2)
-        
-        with open(markdown_path, "r", encoding="utf-8") as f:
-            content = f.read()
+        html_doc = f"""
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; padding: 40px; font-size: 14px; line-height: 1.6; color: #333; }}
+h1 {{ color: #1a1a1a; border-bottom: 2px solid #eaecef; padding-bottom: 0.3em; margin-bottom: 16px; margin-top: 24px; }}
+h2 {{ color: #2a2a2a; border-bottom: 1px solid #eaecef; padding-bottom: 0.3em; margin-top: 24px; margin-bottom: 16px; }}
+h3 {{ color: #444; margin-top: 24px; margin-bottom: 16px; }}
+pre {{ background-color: #f6f8fa; padding: 16px; border-radius: 6px; overflow: auto; white-space: pre-wrap; word-wrap: break-word; }}
+code {{ font-family: ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, Liberation Mono, monospace; background-color: rgba(175, 184, 193, 0.2); padding: 0.2em 0.4em; border-radius: 6px; font-size: 85%; white-space: pre-wrap; word-wrap: break-word; }}
+pre code {{ background-color: transparent; padding: 0; white-space: pre-wrap; word-wrap: break-word; }}
+table {{ border-collapse: collapse; width: 100%; margin-top: 15px; margin-bottom: 15px; table-layout: fixed; word-wrap: break-word; font-size: 11px; }}
+th, td {{ border: 1px solid #d0d7de; padding: 6px; word-break: keep-all; word-wrap: break-word; overflow-wrap: break-word; }}
+th {{ background-color: #f6f8fa; font-weight: 600; }}
+tr:nth-child(2n) {{ background-color: #f6f8fa; }}
+blockquote {{ padding: 0 1em; color: #656d76; border-left: .25em solid #d0d7de; }}
+.math-display {{ text-align: center; margin: 1em 0; padding: 12px; background: #f8f9fa; border-radius: 6px; font-family: 'Cambria Math', 'Latin Modern Math', Georgia, serif; font-size: 16px; font-style: italic; color: #1a1a1a; }}
+.math-inline {{ font-family: 'Cambria Math', 'Latin Modern Math', Georgia, serif; font-style: italic; color: #1a1a1a; font-size: 105%; }}
+</style>
+</head>
+<body>
+{html_content}
+</body>
+</html>
+"""
+
+        temp_html = markdown_path.replace(".md", "_temp.html")
+        with open(temp_html, 'w', encoding='utf-8') as f:
+            f.write(html_doc)
+
+        async def generate_pdf():
+            async with async_playwright() as p:
+                browser = await p.chromium.launch(headless=True)
+                page = await browser.new_page()
+                file_url = f"file://{os.path.abspath(temp_html)}"
+                await page.goto(file_url, wait_until="networkidle")
+                await page.pdf(
+                    path=output_pdf_path,
+                    format="A4",
+                    print_background=True,
+                    margin={"top": "20mm", "bottom": "20mm", "left": "20mm", "right": "20mm"}
+                )
+                await browser.close()
+
+        # Check if an event loop is already running
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            loop = None
             
-        pdf.add_section(Section(content))
-        pdf.save(output_pdf_path)
-        
-        print(f"✅ PDF Generated: {output_pdf_path}")
+        if loop and loop.is_running():
+            import nest_asyncio
+            nest_asyncio.apply()
+            asyncio.run(generate_pdf())
+        else:
+            asyncio.run(generate_pdf())
+
+        if os.path.exists(temp_html):
+            os.remove(temp_html)
+
+        print(f"✅ PDF Generated via Playwright: {output_pdf_path}")
         return True
+    
     except Exception as e:
         print(f"❌ PDF Conversion Failed: {e}")
         return False
