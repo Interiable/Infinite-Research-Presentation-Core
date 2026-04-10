@@ -1,40 +1,37 @@
-# 🌌 Gravity AI Agent v3.2 (Ultimate Plus - LLaMA 4 Scout Powered)
+# 🌌 LangAIAgent D-Research (Ultimate Plus - Gemma-4-31B Powered)
 
-**"Hybrid Intelligence, Absolute Quality."**
+**"Hybrid Intelligence, Absolute Quality, Zero Hallucinations."**
 
-This is an advanced, autonomous AI Agent system designed to function as a complete **R&D Team**. It combines the cost-efficiency of **High-Performance Local LLMs** with the reasoning power of Gemini Pro and GPT-5.2, all orchestrated by a rigorous Supervisor.
+This is an advanced, autonomous AI Agent system designed to function as a complete **R&D Team**. It combines the cost-efficiency of **High-Performance Local LLMs (Gemma-4-31B)** with the reasoning power of Gemini Pro and GPT-5.2, all orchestrated by a rigorous Supervisor and a Deep Research pipeline.
 
 ---
 
-## 🚀 Key Features (v3.1 Update)
+## 🚀 Key Features (v4.0 Update)
 
-### 1. 🛡️ Polyglot Fallback Engine ("The Brain that Never Sleeps")
+### 1. 🧠 Holistic Knowledge Synchronization & Registry Guard
+The biggest leap in v4.0 is the integration of a **Deep Research Pipeline** and **Ground Truth Synchronization**:
+- **Deep Research Engine**: Actively fetches and parses Academic papers (ArXiv), Web searches, Patents (Google Patents), and Media (YouTube Transcripts).
+- **Holistic Knowledge Sync**: `local_knowledge` (RAG DB) and `web_knowledge` (Deep Search) are globally injected into the **Plan Refiner** and **Supervisor**. The Supervisor now critiques drafts using actual *Ground Truth* rather than relying solely on arbitrary rules.
+- **Registry Guard (0% Hallucination)**: All loaded documents are assigned a `REF` tag and stored in a `verified_reference_registry`. The Researcher Agent actively strips and amputates any LLM-hallucinated citations (`[REF-XXX]`) that do not exist in the registry before submitting drafts.
+
+### 2. 🛡️ Polyglot Fallback Engine ("The Brain that Never Sleeps")
 The system uses a tiered intelligence strategy to ensure zero downtime and maximum quality:
-1.  **Primary**: **Gemini 3 Pro** (High Reasoning, Polyglot).
+1.  **Primary**: **Gemini 1.5 Pro / Flash** (High Reasoning, Document Processing).
 2.  **Secondary**: **OpenAI GPT-5.2** (High Quality Fallback). If Gemini hits a quota limit (429), the system *instantly* switches to GPT-5.2 while preserving the entire conversation context.
-3.  **Local LLM**: **LLaMA 4 Scout (17B-16E MoE)** running via **llama.cpp**.
-    -   **Why?**: Combines the depth of a **107B parameter** knowledge base with the speed of a **17B** inference engine.
-    -   **Specs**: 107B Total Params, 16 Experts. 
-    -   **Optimization**: Uses **MoE CPU Offloading** to fit massive intelligence into the RTX 5090 (only 12GB VRAM needed).
-    -   **Intelligence**: Provides reasoning consistency comparable to 100B+ class models, far exceeding standard 30B dense models.
-
-### 2. 🧠 Strict Librarian & North Star Protocol ("The Anti-Drift System")
--   **Strict Librarian**: The Planner filters and selects only relevant files (`.pdf`, `.txt`, `.md`, **`.docx`**) from the `data/` folder and connected repositories.
-    -   *Update*: Now fully supports Microsoft Word (`.docx`) deep reading.
--   **North Star Protocol**: To prevent "Goal Drift", the Supervisor rejects any work that deviates from the original user intent.
+3.  **Local LLM**: **Gemma-4-31B** (Running locally).
+    -   **Why?**: Unrivaled capacity for high-fidelity scientific reasoning, mathematical derivation, and academic paper summarization. Replaces DeepSeek-R1 for superior academic rigor without internal reasoning tag leakage.
 
 ### 3. ✍️ Deep Recursive Writer ("The Book Author")
 Instead of shallow summaries, the Researcher writes **Book-Quality Reports**:
--   **Blueprinting**: Generates a Table of Contents (TOC).
--   **Deep Reading**: Reads the **FULL TEXT** of relevant PDFs/Code for each chapter (not just snippets).
--   **Performance Tracking**: Automatically tracks and reports execution time for every chapter (e.g., "Duration: 45.2s").
--   **Refined Supervision**: Supervisor intervenes to "Coach & Rewrite" after **10 failed attempts** (Standard) to ensure quality.
+- **Dynamic Search Constraints**: Configurable flags (e.g., `--no-patent`, `--no-media`) block both web-scraping APIs and Local DB injections flawlessly across all agents.
+- **Blueprinting**: Generates a Table of Contents (TOC) referencing the `Deep_Research_Results`.
+- **Deep Reading**: Reads the **FULL TEXT** of relevant PDFs/Code for each chapter (not just snippets).
+- **Refined Supervision**: Supervisor intervenes immediately to "Coach & Rewrite" if a document fails academic rigor logic tests.
 
 ### 4. 🎨 Iterative Architect ("The Designer")
 Builds complex React applications (Slides/Dashboards) component by component:
 -   **Blueprint First**: Designs the slide structure.
 -   **Component Loop**: Codes each slide individually (`Slide1.tsx`, `Slide2.tsx`...).
--   **Feedback Loop**: If the Supervisor critiques a specific slide, the Architect refactors ONLY that slide.
 
 ---
 
@@ -42,10 +39,10 @@ Builds complex React applications (Slides/Dashboards) component by component:
 
 | Agent | Role | Engine | Key Capability |
 | :--- | :--- | :--- | :--- |
-| **Planner** | Strategist | Gemini 3 Pro | **Context Filtering** (Strict Librarian) |
-| **Supervisor** | Gatekeeper | Polyglot (Pro/GPT) | **Quality Control** (Intervenes @ 10 failures) |
-| **Researcher** | Writer | **LLaMA 4 Scout** | **MoE Reasoning** (107B Knowledge, Deep Read) |
-| **Architect** | Developer | Gemini 3 Pro | **Iterative Coding** (React/Lucide) |
+| **Planner & Refiner** | Strategist | Gemini 1.5 Pro | **Holistic Knowledge Integration** |
+| **Supervisor** | Quality Gate | Gemini 1.5 Pro / GPT | **Ground Truth Verification** |
+| **Researcher** | Writer | Gemini 1.5 Flash | **Deep Reading & Registry Guard** |
+| **Scientific Specialist** | Domain Expert | **Gemma-4-31B** | **Math & SOTA Synthesis** |
 
 ---
 
@@ -54,9 +51,8 @@ Builds complex React applications (Slides/Dashboards) component by component:
 ### Prerequisites
 -   Python 3.10+
 -   Node.js 18+
--   **llama.cpp** built with CUDA support (`GGML_CUDA=ON`)
--   **Hardware**: RTX 5090 Recommended (Handles the 107B model with MoE CPU offloading)
--   API Keys: `GOOGLE_API_KEY`, `OPENAI_API_KEY` (Optional fallback)
+-   **Hardware**: RTX 5090 Recommended (Handles Gemma-4-31B efficiently).
+-   API Keys: `GOOGLE_API_KEY`, `OPENAI_API_KEY` (Optional fallback), `TAVILY_API_KEY`
 
 ### 1. Setup Environment
 ```bash
@@ -77,37 +73,35 @@ Create `backend/.env`:
 ```ini
 GOOGLE_API_KEY=AIzaSy...
 OPENAI_API_KEY=sk-proj...
-# Comma-separated absolute paths to your research data/code
-LOCAL_RESEARCH_DIR=/home/user/data,/home/user/projects/robot_code
+TAVILY_API_KEY=tvly-...
 # Local Model Selection
-LOCAL_LLM_MODEL=llama4-scout
+LOCAL_LLM_MODEL=gemma4:31b
 ```
 
 ### 3. Prepare Data
-Put your PDF papers, text files, Word docs (`.docx`) or code repositories into `backend/data/` or link them via `LOCAL_RESEARCH_DIR`.
+Put your PDF papers, text files, Word docs (`.docx`) or code repositories into `backend/data/projects/default`.
 
 ### 4. Launch System
 ```bash
-python share_system.py
+python run_system.py
 ```
 This script handles everything:
--   Starts the FastAPI Backend.
--   Starts the React Frontend (Vite).
--   Sets up the Tunnel (ngrok/localtunnel) for sharing.
+-   Starts the FastAPI Backend (uvicorn).
+-   Starts the React Frontend (vite).
 
 ---
 
 ## 📂 Project Structure
 
-```
+```text
 LangAIAgent/
 ├── backend/
 │   ├── app/
-│   │   ├── agents/          # Planner, Supervisor, Researcher, Architect
-│   │   ├── core/            # State Schema (AgentState, Graph)
-│   │   └── utils.py         # RobustGemini (Polyglot Wrapper)
-│   ├── data/                # Your Research Files (PDFs, Code)
-│   └── artifacts/           # Generated Reports & Slides
+│   │   ├── agents/          # Supervisor, Researcher, Plan Refiner, Deep Researcher
+│   │   ├── core/            # State Schema & Graph logic
+│   │   ├── utils/           # Academic, Media, Patent sub-researchers
+│   ├── data/                # Vector DBs (Chroma), SQLite Vault
+│   └── artifacts/           # Auto-generated Reports & Outputs
 └── frontend/
     └── src/                 # React UI
 ```
@@ -115,4 +109,4 @@ LangAIAgent/
 ---
 
 ## 🛡️ License
-Private Agent System. Developed for Advanced AI Research.
+Private Agent System. Developed for Advanced Physical AI & Concept Engineering.
