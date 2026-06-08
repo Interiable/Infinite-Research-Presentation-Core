@@ -31,7 +31,7 @@ patent_llm = RobustGemini(temperature=0.3)
 # v9.3: Use Gemini Flash for lightweight scoring tasks (much faster + cheaper)
 from langchain_google_genai import ChatGoogleGenerativeAI
 scoring_llm = ChatGoogleGenerativeAI(
-    model="gemini-3-flash-preview",
+    model=os.getenv("GEMINI_FLASH_MODEL", "gemini-3.5-flash"),
     temperature=0.2,
     google_api_key=os.getenv("GOOGLE_API_KEY")
 )

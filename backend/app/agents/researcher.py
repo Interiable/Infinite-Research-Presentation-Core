@@ -12,7 +12,7 @@ def save_dialogue_message(thread_id, sender, content):
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.messages import SystemMessage, HumanMessage
 from app.core.state import AgentState
-from app.agents.local_model import local_llm
+from app.agents.local_model import local_llm, local_science_llm
 from app.utils import RobustGemini, log_night_audit
 
 # --- CONFIGURATION ---
@@ -34,13 +34,12 @@ llm_robust = RobustGemini(temperature=0.3)
 from app.utils import DeepResearcher
 deep_research_engine = DeepResearcher(temperature=0.4)
 
-# --- v5.0 GEMMA 4 INTEGRATION ---
-# Initialize Gemma 4 for Math/Logic/Engineering tasks
+# --- Science LLM: Gemma 4 31B (과학/수학/공학 추론 전용) ---
 try:
-    local_deepseek = local_llm # Unified integration
-    print("✅ Gemma-4 Strategy Engine Initialized.")
+    local_deepseek = local_science_llm
+    print(f"✅ Science LLM (Gemma 4) initialized for scientific reasoning.")
 except Exception as e:
-    print(f"⚠️ Failed to initialize Gemma-4: {e}. Fallback to local_llm.")
+    print(f"⚠️ Science LLM init failed: {e}. Falling back to local_llm.")
     local_deepseek = local_llm
 
 

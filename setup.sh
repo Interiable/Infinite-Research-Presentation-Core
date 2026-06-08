@@ -50,11 +50,13 @@ else
   success "backend/.env already exists — skipping"
 fi
 
-# Read LOCAL_LLM_MODEL from .env if set, otherwise use default
+# Read model names from .env
 if [ -f backend/.env ]; then
-  ENV_LOCAL_MODEL=$(grep -E "^LOCAL_LLM_MODEL=" backend/.env | cut -d'=' -f2 | tr -d ' \r')
+  ENV_LOCAL_MODEL=$(grep -E "^LOCAL_LLM_MODEL=" backend/.env | cut -d'=' -f2 | tr -d ' "#\'\r')
+  ENV_SCIENCE_MODEL=$(grep -E "^LOCAL_SCIENCE_MODEL=" backend/.env | cut -d'=' -f2 | tr -d ' "#\'\r')
 fi
-LOCAL_MODEL="${ENV_LOCAL_MODEL:-"qwen3-32k:30b-a3b"}"
+LOCAL_MODEL="${ENV_LOCAL_MODEL:-"qwen3.6:27b"}"
+SCIENCE_MODEL="${ENV_SCIENCE_MODEL:-"gemma4:31b"}"
 
 # ------------------------------------------------------------
 # 3. Python virtual environment
@@ -104,20 +106,28 @@ else
 fi
 
 # ------------------------------------------------------------
-# 8. Pull local LLM model (reads LOCAL_LLM_MODEL from .env)
+# 8. Pull local LLM models (reads from .env)
 # ------------------------------------------------------------
 echo ""
-warn "Local model to pull: ${LOCAL_MODEL}  (from backend/.env)"
-warn "This requires ~16-20GB disk space. Skip with Ctrl+C if not needed."
+warn "Models to pull:"
+warn "  General LLM : ${LOCAL_MODEL}   (~17GB)"
+warn "  Science LLM : ${SCIENCE_MODEL} (~22GB)"
+warn "Total disk ~39GB required."
 echo ""
-read -p "Pull local model '${LOCAL_MODEL}' now? [y/N] " -n 1 -r
+read -p "Pull both models now? [y/N] " -n 1 -r
 echo ""
 if [[ $REPLY =~ ^[Yy]$ ]]; then
-  info "Pulling ${LOCAL_MODEL} via Ollama..."
+  info "Pulling ${LOCAL_MODEL} (General LLM)..."
   ollama pull "${LOCAL_MODEL}"
-  success "Model ${LOCAL_MODEL} ready"
+  success "${LOCAL_MODEL} ready"
+
+  info "Pulling ${SCIENCE_MODEL} (Science LLM)..."
+  ollama pull "${SCIENCE_MODEL}"
+  success "${SCIENCE_MODEL} ready"
 else
-  warn "Skipped model pull. Run manually: ollama pull ${LOCAL_MODEL}"
+  warn "Skipped. Run manually:"
+  warn "  ollama pull ${LOCAL_MODEL}"
+  warn "  ollama pull ${SCIENCE_MODEL}"
 fi
 
 # ------------------------------------------------------------
