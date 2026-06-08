@@ -425,7 +425,7 @@ def build_reference_registry(
                 "type": "file",
                 "title": os.path.basename(file_path),
                 "path": file_path,
-                "key_content": content[:500],
+                "key_content": content[:3000],
                 "verified": True
             })
             existing_titles.add(title_lower)
@@ -450,7 +450,7 @@ def build_reference_registry(
                     "type": "paper",
                     "title": p_title,
                     "score": paper.get('score', 0),
-                    "key_content": p_content[:500],
+                    "key_content": p_content[:3000],
                     "verified": True
                 })
                 existing_titles.add(p_title.lower())
@@ -474,7 +474,7 @@ def build_reference_registry(
                     "type": "patent",
                     "title": pat_title,
                     "patent_id": pat_id,
-                    "key_content": pat_content[:500],
+                    "key_content": pat_content[:3000],
                     "verified": True
                 })
                 existing_titles.add(pat_title.lower())
@@ -502,7 +502,7 @@ def build_reference_registry(
                     "title": source_title,
                     "url": source_url,
                     "source_file": txt_file,
-                    "key_content": body_content[:500],
+                    "key_content": body_content[:3000],
                     "verified": True
                 })
                 existing_titles.add(source_title.lower())
@@ -528,7 +528,7 @@ def build_reference_registry(
                         "ref_id": ref_id,
                         "type": src['type'],
                         "title": src.get('title', 'Unknown'),
-                        "key_content": src.get('content', '')[:500],
+                        "key_content": src.get('content', '')[:3000],
                         "verified": True
                     }
                     if src['type'] == 'web':
@@ -1818,7 +1818,81 @@ This draft is a TARGETED REVISION of a previously rejected chapter. The writer h
         
         if ref_valid > 0 or ref_invalid > 0:
             print(f"🛡️ Registry Guard (REF-XXX): {ref_valid} valid, {ref_invalid} stripped")
-        
+
+        # --- Guard 1.5: Citation Frequency Anomaly + Source-Claim Verification ---
+        # Detects blanket citations where a single REF is cited far too many times,
+        # then verifies cited sentences against the source's stored key_content.
+        # If a sentence's keywords don't appear in the source content → strip that citation.
+        try:
+            from collections import Counter
+            ANOMALY_THRESHOLD = 15   # citations per chapter before we investigate
+            MISMATCH_RATIO    = 0.5  # strip REF from a sentence if <50% keyword overlap
+            STOP_WORDS = {
+                'the','and','for','are','this','that','with','from','was','its','have',
+                'been','which','they','their','into','when','also','such','more','than',
+                'these','those','each','will','can','has','not','but','all','any','one',
+                '이','그','및','의','를','은','는','에','로','도','하','있','이다','것'
+            }
+
+            all_ref_in_chapter = re.findall(r'REF-\d{3}', chapter_output)
+            ref_freq = Counter(all_ref_in_chapter)
+            anomalous_refs = {r: c for r, c in ref_freq.items() if c > ANOMALY_THRESHOLD}
+
+            if anomalous_refs:
+                print(f"⚠️ Citation Anomaly Detected: {anomalous_refs}")
+
+            total_blanket_stripped = 0
+            for ref_id, count in anomalous_refs.items():
+                ref_entry = next((r for r in registry if r['ref_id'] == ref_id), None)
+                if not ref_entry:
+                    continue
+
+                source_content = ref_entry.get('key_content', '').lower()
+                if len(source_content) < 50:
+                    # Source content too short to verify — skip to avoid false positives
+                    print(f"   ⚠️ [{ref_id}] key_content too short to verify ({len(source_content)} chars). Skipping.")
+                    continue
+
+                # Split chapter into sentences for per-sentence verification
+                sentences_raw = re.split(r'(?<=[.!?\n])\s+', chapter_output)
+                stripped_in_ref = 0
+
+                for i, sentence in enumerate(sentences_raw):
+                    if f'[{ref_id}]' not in sentence:
+                        continue
+
+                    # Extract meaningful keywords from the sentence (ignore REF tags)
+                    clean = re.sub(r'\[REF-\d{3}\]', '', sentence).lower()
+                    keywords = [
+                        w for w in re.findall(r'\b[\w가-힣]{5,}\b', clean)
+                        if w not in STOP_WORDS
+                    ][:8]
+
+                    if not keywords:
+                        continue
+
+                    # Check keyword overlap with source's stored content
+                    matched = sum(1 for kw in keywords if kw in source_content)
+                    overlap = matched / len(keywords)
+
+                    if overlap < MISMATCH_RATIO:
+                        # This sentence's content doesn't come from this source → strip citation
+                        sentences_raw[i] = sentence.replace(f'[{ref_id}]', '')
+                        stripped_in_ref += 1
+
+                if stripped_in_ref > 0:
+                    chapter_output = ' '.join(sentences_raw)
+                    total_blanket_stripped += stripped_in_ref
+                    print(f"   🛡️ Blanket Citation Guard: stripped [{ref_id}] from {stripped_in_ref} mismatched sentences (was cited {count}x)")
+
+            if total_blanket_stripped > 0:
+                print(f"🛡️ Guard 1.5 total: {total_blanket_stripped} blanket citation(s) removed")
+            elif anomalous_refs:
+                print(f"🛡️ Guard 1.5: {list(anomalous_refs.keys())} cited heavily but content verified OK")
+
+        except Exception as e:
+            print(f"⚠️ Guard 1.5 (Blanket Citation Check) failed: {e}. Skipping.")
+
         # --- Guard 2: Strip ALL legacy free-form citations ---
         # The Writer was instructed to use only [REF-XXX], but LLMs may still produce old formats
         legacy_types = ['File', 'Web', 'Paper', 'Patent', 'File✓', 'Web✓', 'Paper✓', 'Patent✓']
