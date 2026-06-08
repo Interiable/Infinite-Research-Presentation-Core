@@ -652,6 +652,11 @@ Answer ONLY 'A' or 'B':"""
                 1. **Derivable Data (게으름)**: 만약 누락된 데이터가 물리학적 추론이나 페르미 추정으로 도출 가능한 경우(예: "모터 토크가 충분한가?"), **REJECT**하고 "직접 계산하여 가정을 세우시오"라고 지시하세요.
                 2. **Non-Derivable Facts (불가항력)**: 만약 누락된 데이터가 외부의 구체적 사실(예: "특정 논문의 실험 수치", "최신 칩셋의 출시일", "경쟁사 제품의 무게")이라서 추론이 불가능한 경우, **DEEP_RESEARCH_REQUIRED**를 출력하세요. "외부 검색을 통해 데이터를 찾아오시오"라고 지시하세요.
                 3. **Patent / Prior Art (특허/선행기술)**: 사용자 목표가 UX Research, 제품 설계, 기술 발명, 또는 신규 제품 개발인 경우, 관련 **특허 분석(Prior Art Analysis)**이 보고서에 포함되어야 합니다. 특허 데이터가 누락되었다면 **DEEP_RESEARCH_REQUIRED: Patent search needed for [specific topic]**를 출력하세요. 시스템이 자동으로 Lens Patent API, PatentsView, Google Patents를 검색합니다.
+                4. **Citation Sparsity (인용 희박 — 즉시 추가 검색 요청)**: 아래 조건을 **모두** 충족하면 즉시 **DEEP_RESEARCH_REQUIRED**를 출력하세요.
+                   - 챕터가 시장 동향, 경쟁사 분석, 기술 스펙, 학술 연구 결과 등 외부 데이터가 필수인 주제를 다루고 있음
+                   - 챕터에 인용된 외부 출처(web/paper 타입 REF)가 **2개 이하**이거나 로컬 파일 REF만 반복 인용되고 있음
+                   - 즉, 챕터가 사실상 내부 문서에만 의존하여 외부 근거가 빈약한 상태임
+                   → 이 경우 "DEEP_RESEARCH_REQUIRED: Insufficient external sources. Need web/paper search for [specific missing data]."를 출력하세요.
 
             - **CITATION & REFERENCES ENFORCEMENT**:
                 1. If the draft lacks inline citations (e.g., `[File: ...]`, `[Web: ...]`) for factual claims, output `REJECTED: Missing inline citations.`

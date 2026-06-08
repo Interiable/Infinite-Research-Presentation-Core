@@ -392,9 +392,9 @@ JSON Output:"""
         # v13.0: Track all discovered sources for Reference Registry
         discovered_sources = []
         
-        # v13.0: Dynamic search count — assess if topic needs more web sources
-        base_web_results = 8
-        base_academic_results = 2
+        # v13.0+: Dynamic search count — assess if topic needs more web sources
+        base_web_results = 12   # raised from 8
+        base_academic_results = 4  # raised from 2
         try:
             from app.agents.local_model import local_llm as _assess_llm
             assess_prompt = f"""Assess the research topic below. How heavily does it rely on EXTERNAL web sources vs LOCAL project files?
@@ -403,17 +403,17 @@ Respond with ONLY one word: LOW, MEDIUM, or HIGH"""
             assess_res = _assess_llm.invoke([HumanMessage(content=assess_prompt)])
             web_need = str(assess_res.content).strip().upper()
             if 'HIGH' in web_need:
-                base_web_results = 15
-                base_academic_results = 4
+                base_web_results = 20
+                base_academic_results = 8
                 print(f"📈 Dynamic Search: HIGH web dependency detected → {base_web_results} web results, {base_academic_results} academic per keyword")
             elif 'MEDIUM' in web_need:
-                base_web_results = 10
-                base_academic_results = 3
+                base_web_results = 16
+                base_academic_results = 6
                 print(f"📊 Dynamic Search: MEDIUM web dependency → {base_web_results} web results, {base_academic_results} academic per keyword")
             else:
-                print(f"📉 Dynamic Search: LOW web dependency → {base_web_results} web results (default)")
+                print(f"📉 Dynamic Search: LOW web dependency → {base_web_results} web results, {base_academic_results} academic per keyword")
         except Exception:
-            print(f"⚠️ Dynamic search assessment failed, using defaults: {base_web_results} web results")
+            print(f"⚠️ Dynamic search assessment failed, using defaults: {base_web_results} web results, {base_academic_results} academic")
         
         print(f"🔧 Search Options: web={use_web}, academic={use_academic}, patent={use_patent}, media={use_media}")
         
