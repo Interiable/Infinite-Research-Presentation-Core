@@ -8,7 +8,7 @@ from bs4 import BeautifulSoup
 from langchain_core.messages import SystemMessage, HumanMessage
 from app.core.state import AgentState
 from app.utils import save_artifact, log_night_audit
-from langchain_community.tools.tavily_search import TavilySearchResults
+from langchain_tavily import TavilySearch
 from app.agents.local_model import local_llm
 from app.core.rag import PatentLibrary, WebSearchLibrary, MediaLibrary
 
@@ -526,7 +526,7 @@ Respond with ONLY one word: LOW, MEDIUM, or HIGH"""
             # --- GENERAL WEB RESEARCH (Tavily) ---
             if use_web:
                 try:
-                    search = TavilySearchResults(max_results=base_web_results)  # v13.0: dynamic count
+                    search = TavilySearch(max_results=base_web_results)  # v13.0: dynamic count
                     
                     # v14.0: Multi-Query Execution
                     all_results = []
