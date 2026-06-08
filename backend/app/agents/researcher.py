@@ -687,9 +687,9 @@ def researcher_node(state: AgentState, config: RunnableConfig):
         mode = state.get('research_mode', 'deep')
         
         # --- v3.18 SCIENTIFIC SPECIALIST PATTERN ---
-        # Lead Writer is always Qwen3 for consistent tone
-        selected_llm = local_llm 
-        model_name = "Qwen3:30b"
+        # Lead Writer: local_llm (Qwen3.6 27B) for consistent tone
+        selected_llm = local_llm
+        model_name = os.getenv("LOCAL_LLM_MODEL", "qwen3.6:27b")
         
         # 1. Detect if High-Logic Reasoning is required
         try:
@@ -1524,7 +1524,7 @@ The current task is STRICTLY limited to: "{current_step_desc}"
         if approved_context:
             chapter_context += f"\n\n**PREVIOUSLY APPROVED CHAPTERS (Do NOT repeat any content from these):**\n{approved_context}\n"
         
-        # --- Gemini 1.5 Flash Primary Drafting (v5.5) ---
+        # --- Gemini Flash Primary Drafting ---
         # Gemini Flash's huge context window allows us to skip chunking entirely.
         # We pass up to 300k chars of raw data + fact sheets in one shot.
         
@@ -1545,7 +1545,8 @@ The current task is STRICTLY limited to: "{current_step_desc}"
             registry_instruction += "\n**🚫 ABSOLUTE RULE: You MUST cite using ONLY [REF-XXX] format from the list above.**\n"
             registry_instruction += "**ANY citation NOT using a [REF-XXX] ID from this list (e.g., [Web: ...], [Paper: ...], [Patent: ...], [File: ...]) will be AUTOMATICALLY DELETED.**\n"
         
-        print(f"⚡ Gemini 1.5 Flash leading Chapter {current_chapter_idx+1}: {title} (Registry: {len(registry)} refs)")
+        flash_model = os.getenv("GEMINI_FLASH_MODEL", "gemini-3.5-flash")
+        print(f"⚡ {flash_model} leading Chapter {current_chapter_idx+1}: {title} (Registry: {len(registry)} refs)")
         
         # Increase context limits for Gemini (it can handle it)
         gemini_raw_context = raw_chapter_context[:100000] 
@@ -1642,7 +1643,7 @@ Write the full technical specification for "{title}" based on the sources above.
                         print(f"✅ Gemini Draft Complete (attempt {draft_attempt+1}). Length: {len(final_text)} chars.")
                         break  # Good response, exit retry loop
                     else:
-                        print(f"⚠️ Gemini returned near-empty response (attempt {draft_attempt+1}/{max_draft_retries}): {len(stripped_text)} chars. {'Retrying...' if draft_attempt < max_draft_retries-1 else 'Falling back to Qwen3.'}")
+                        print(f"⚠️ Gemini returned near-empty response (attempt {draft_attempt+1}/{max_draft_retries}): {len(stripped_text)} chars. {'Retrying...' if draft_attempt < max_draft_retries-1 else 'Falling back to local LLM.'}")
                         if draft_attempt < max_draft_retries - 1:
                             import time as _retry_time
                             _retry_time.sleep(3)  # Brief delay before retry
@@ -1790,10 +1791,10 @@ This draft is a TARGETED REVISION of a previously rejected chapter. The writer h
                             print(f"🧹 No '{expected_prefix}' heading found. Stripped {first_heading.start()} chars of preamble before first heading.")
                             chapter_output = chapter_output[first_heading.start():]
             else:
-                print(f"⚠️ Flash Refinement failed or produced empty. Keeping Qwen3 draft (Caution).")
+                print(f"⚠️ Flash Refinement failed or produced empty. Keeping local LLM draft (Caution).")
                 
         except Exception as e:
-            print(f"⚠️ Flash Refinement Failed: {e}. Keeping Qwen3 draft.")
+            print(f"⚠️ Flash Refinement Failed: {e}. Keeping local LLM draft.")
         
         # ===== v13.0: REGISTRY-BASED CITATION GUARD (100% ENFORCEMENT) =====
         # Replaces the previous 4 separate guards (Patent/Paper/File/URL).
