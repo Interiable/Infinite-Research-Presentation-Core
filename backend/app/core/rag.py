@@ -18,7 +18,7 @@ class VectorStoreManager:
             persistence_dir = os.path.join(base_dir, "data", "projects", project_id, "chroma_db")
         self.persistence_dir = persistence_dir
         self.embedding_model = GoogleGenerativeAIEmbeddings(
-            model="models/gemini-embedding-2-preview",  # Updated model name
+            model=os.getenv("EMBEDDING_MODEL", "models/text-embedding-004"),  # Updated model name
             google_api_key=os.getenv("GOOGLE_API_KEY"),
             task_type="retrieval_document"
         )
@@ -186,7 +186,7 @@ class PaperLibrary:
         
         self.persistence_dir = persistence_dir
         self.embedding_model = GoogleGenerativeAIEmbeddings(
-            model="models/gemini-embedding-2-preview",
+            model=os.getenv("EMBEDDING_MODEL", "models/text-embedding-004"),
             google_api_key=os.getenv("GOOGLE_API_KEY"),
             task_type="retrieval_document"
         )
@@ -466,7 +466,7 @@ class PatentLibrary:
         
         self.persistence_dir = persistence_dir
         self.embedding_model = GoogleGenerativeAIEmbeddings(
-            model="models/gemini-embedding-2-preview",
+            model=os.getenv("EMBEDDING_MODEL", "models/text-embedding-004"),
             google_api_key=os.getenv("GOOGLE_API_KEY"),
             task_type="retrieval_document"
         )
@@ -686,7 +686,7 @@ class WebSearchLibrary:
         
         self.persistence_dir = persistence_dir
         self.embedding_model = GoogleGenerativeAIEmbeddings(
-            model="models/gemini-embedding-2-preview",
+            model=os.getenv("EMBEDDING_MODEL", "models/text-embedding-004"),
             google_api_key=os.getenv("GOOGLE_API_KEY"),
             task_type="retrieval_document"
         )
@@ -897,7 +897,7 @@ class MediaLibrary:
         
         self.persistence_dir = persistence_dir
         self.embedding_model = GoogleGenerativeAIEmbeddings(
-            model="models/gemini-embedding-2-preview",
+            model=os.getenv("EMBEDDING_MODEL", "models/text-embedding-004"),
             google_api_key=os.getenv("GOOGLE_API_KEY"),
             task_type="retrieval_document"
         )

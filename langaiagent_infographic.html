@@ -1,0 +1,1768 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LangAIAgent — 24/7/365 자율 연구 대시보드</title>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@300;400;500;600;700;800;900&family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      user-select: none;
+    }
+
+    :root {
+      --bg: #05070f;
+      --surface: rgba(17, 24, 39, 0.65);
+      --card: rgba(30, 41, 59, 0.5);
+      --card-hover: rgba(38, 53, 72, 0.7);
+      --border: rgba(51, 65, 85, 0.6);
+      --border-glow: rgba(129, 140, 248, 0.45);
+      --text: #f8fafc;
+      --text-dim: #cbd5e1;
+      --text-muted: #64748b;
+      --accent: #818cf8;
+      --accent2: #06b6d4;
+      --success: #10b981;
+      --warn: #f59e0b;
+      --danger: #f43f5e;
+      --gradient: linear-gradient(135deg, #818cf8, #06b6d4);
+      --shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.6);
+    }
+
+    html, body {
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      font-family: 'Noto Sans KR', 'Inter', sans-serif;
+      font-size: 17px;
+      background-color: var(--bg);
+      color: var(--text);
+    }
+
+    /* Ambient Background Glows */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(circle at 10% 10%, rgba(99, 102, 241, 0.1), transparent 45%),
+        radial-gradient(circle at 90% 80%, rgba(6, 182, 212, 0.1), transparent 45%),
+        radial-gradient(circle at 50% 50%, rgba(244, 63, 94, 0.04), transparent 50%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 6px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
+    /* ===== INTRO SCREEN ===== */
+    #intro-screen {
+      position: fixed;
+      inset: 0;
+      z-index: 200;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      padding: 28px 32px 98px;
+      transition: opacity 0.65s ease;
+    }
+
+    .intro-top {
+      text-align: center;
+      flex-shrink: 0;
+      margin-top: 38px;
+    }
+
+    .intro-tags {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      margin-bottom: 14px;
+    }
+
+    .intro-tag {
+      padding: 5px 14px;
+      border-radius: 20px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+    }
+
+    .intro-title {
+      font-size: 4.5rem;
+      font-weight: 900;
+      letter-spacing: -2px;
+      background: var(--gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 6px;
+      line-height: 1.2;
+      padding: 4px 10px;
+    }
+
+    .intro-subtitle {
+      font-size: 1.75rem;
+      font-weight: 400;
+      color: var(--text-dim);
+    }
+
+    /* ---- Middle Row (orbit + skills) ---- */
+    .intro-middle {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 52px;
+      min-height: 0;
+      width: 100%;
+    }
+
+    .intro-orbit-wrapper {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    #orbit-container {
+      position: relative;
+      width: 580px;
+      height: 580px;
+      flex-shrink: 0;
+    }
+
+    /* ---- Skills Panel ---- */
+    .skills-panel {
+      width: 230px;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .skills-panel-title {
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 1.4px;
+      padding-left: 4px;
+      margin-bottom: 4px;
+    }
+
+    .skill-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 14px;
+      background: rgba(17, 24, 39, 0.5);
+      border: 1px solid rgba(51, 65, 85, 0.45);
+      border-radius: 10px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: var(--text-dim);
+      transition: border-color 0.2s, color 0.2s;
+    }
+
+    .skill-item:hover {
+      border-color: rgba(6, 182, 212, 0.45);
+      color: var(--text);
+    }
+
+    .skill-emoji { font-size: 1.1rem; flex-shrink: 0; }
+
+    .skill-tag {
+      margin-left: auto;
+      font-size: 0.68rem;
+      color: var(--text-muted);
+      font-family: 'Fira Code', monospace;
+      letter-spacing: 0.3px;
+    }
+
+    .orbit-rings {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .intro-hub {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 118px;
+      height: 118px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, rgba(99,102,241,0.85), rgba(6,182,212,0.85));
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      color: #05070f;
+      animation: introHubGlow 3s ease-in-out infinite alternate;
+      z-index: 10;
+    }
+
+    .intro-hub .hub-emoji { font-size: 1.9rem; margin-bottom: 3px; }
+    .intro-hub .hub-text { font-size: 0.78rem; font-weight: 900; line-height: 1.25; letter-spacing: 0.2px; }
+
+    @keyframes introHubGlow {
+      from { box-shadow: 0 0 28px rgba(129,140,248,0.5), 0 0 60px rgba(129,140,248,0.15); }
+      to   { box-shadow: 0 0 55px rgba(6,182,212,0.7),  0 0 100px rgba(6,182,212,0.2); }
+    }
+
+    @keyframes orbitCW  { to { transform: rotate(360deg); } }
+    @keyframes orbitCCW { to { transform: rotate(-360deg); } }
+
+    #orbit-inner {
+      position: absolute;
+      inset: 0;
+      animation: orbitCW 22s linear infinite;
+      z-index: 5;
+    }
+    #orbit-inner > div {
+      animation: orbitCCW 22s linear infinite;
+    }
+
+    /* ---- Goal Input ---- */
+    .intro-goal-section {
+      width: 100%;
+      max-width: 1060px;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .intro-goal-label {
+      font-size: 0.9rem;
+      font-weight: 800;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .intro-input-wrapper {
+      display: flex;
+      gap: 14px;
+      align-items: center;
+      background: rgba(15, 23, 42, 0.8);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 14px 22px;
+      box-shadow: inset 0 2px 10px rgba(0,0,0,0.5);
+      transition: border-color 0.3s;
+    }
+
+    .intro-input-wrapper:focus-within {
+      border-color: rgba(129,140,248,0.55);
+    }
+
+    .intro-goal-input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 1.0rem;
+      font-weight: 700;
+      min-width: 0;
+    }
+
+    .intro-goal-input::placeholder {
+      color: var(--text-muted);
+      font-weight: 400;
+    }
+
+    .intro-start-btn {
+      background: var(--gradient);
+      border: none;
+      outline: none;
+      color: #05070f;
+      font-weight: 900;
+      font-size: 1.05rem;
+      padding: 10px 26px;
+      border-radius: 10px;
+      cursor: pointer;
+      box-shadow: 0 0 18px rgba(6,182,212,0.4);
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .intro-start-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 0 30px rgba(6,182,212,0.7);
+    }
+
+    /* ===== DASHBOARD ===== */
+    #dashboard {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      display: flex;
+      flex-direction: column;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.65s ease;
+    }
+
+    #dashboard.active {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    /* ===== ORIGINAL DASHBOARD STYLES ===== */
+
+    header {
+      height: 72px;
+      padding: 0 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+      background: rgba(10, 14, 26, 0.85);
+      backdrop-filter: blur(12px);
+      z-index: 10;
+      position: relative;
+      flex-shrink: 0;
+    }
+
+    .logo-container {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .logo-badge {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      background: var(--gradient);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      font-size: 1.3rem;
+      color: #05070f;
+      box-shadow: 0 0 20px rgba(129, 140, 248, 0.5);
+    }
+
+    .logo-title {
+      font-size: 1.8rem;
+      font-weight: 900;
+      letter-spacing: -0.8px;
+      background: var(--gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .system-status {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      font-size: 1rem;
+    }
+
+    .status-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(30, 41, 59, 0.7);
+      padding: 8px 16px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+    }
+
+    .pulse-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background-color: var(--success);
+      box-shadow: 0 0 12px var(--success);
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.3); opacity: 0.4; }
+    }
+
+    main {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 460px 1fr 420px;
+      gap: 20px;
+      padding: 20px;
+      height: calc(100vh - 72px - 70px);
+      z-index: 5;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      backdrop-filter: blur(16px);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: var(--shadow);
+      transition: border-color 0.3s;
+    }
+
+    .panel:hover { border-color: rgba(129, 140, 248, 0.35); }
+
+    .panel-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-weight: 800;
+      font-size: 1.25rem;
+      letter-spacing: -0.3px;
+    }
+
+    .panel-header span { display: flex; align-items: center; gap: 10px; }
+
+    .panel-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .agent-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 14px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      position: relative;
+      cursor: pointer;
+      transition: all 0.25s ease;
+    }
+
+    .agent-card:hover {
+      background: var(--card-hover);
+      border-color: var(--accent);
+      transform: translateX(6px);
+    }
+
+    .agent-card.active-thinking {
+      border-color: var(--accent2);
+      box-shadow: 0 0 16px rgba(6, 182, 212, 0.35);
+      background: rgba(6, 182, 212, 0.08);
+    }
+
+    .agent-main-row { display: flex; align-items: center; gap: 16px; }
+
+    .agent-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      flex-shrink: 0;
+      color: #fff;
+    }
+
+    .agent-info { flex: 1; min-width: 0; }
+
+    .agent-name {
+      font-weight: 800;
+      font-size: 1.15rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .agent-role {
+      font-size: 0.95rem;
+      color: var(--text-dim);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-top: 2px;
+    }
+
+    .model-badge {
+      font-size: 0.75rem;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-weight: 600;
+      display: inline-block;
+      margin-top: 4px;
+    }
+
+    .mb-gemini-pro   { background: rgba(129,140,248,0.2); color: #a5b4fc; border: 1px solid rgba(129,140,248,0.4); }
+    .mb-gemini-flash { background: rgba(6,182,212,0.2);   color: #22d3ee; border: 1px solid rgba(6,182,212,0.4); }
+    .mb-deepseek     { background: rgba(16,185,129,0.2);  color: #6ee7b7; border: 1px solid rgba(16,185,129,0.4); }
+    .mb-gemma        { background: rgba(245,158,11,0.2);  color: #fcd34d; border: 1px solid rgba(245,158,11,0.4); }
+    .mb-qwen         { background: rgba(236,72,153,0.2);  color: #fbcfe8; border: 1px solid rgba(236,72,153,0.4); }
+
+    .agent-status-light {
+      width: 8px; height: 8px; border-radius: 50%;
+      position: absolute; top: 16px; right: 16px;
+    }
+    .as-thinking { background: var(--accent2); box-shadow: 0 0 10px var(--accent2); animation: pulse 1s infinite; }
+    .as-waiting  { background: var(--text-muted); }
+    .as-idle     { background: var(--success); }
+
+    .agent-telemetry {
+      display: none;
+      flex-direction: column;
+      gap: 6px;
+      margin-top: 4px;
+      border-top: 1px dashed rgba(255,255,255,0.1);
+      padding-top: 8px;
+    }
+
+    .agent-card.active-thinking .agent-telemetry { display: flex; }
+
+    .agent-telemetry-desc { font-size: 0.85rem; color: var(--accent2); font-weight: 500; }
+
+    .agent-telemetry-bar-bg {
+      width: 100%; height: 4px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 2px; overflow: hidden;
+    }
+
+    .agent-telemetry-bar-fill {
+      height: 100%; width: 0%;
+      background: var(--gradient);
+      border-radius: 2px;
+      transition: width 0.1s linear;
+    }
+
+    .center-workspace { display: flex; flex-direction: column; gap: 20px; }
+
+    .goal-input-box {
+      background: rgba(15, 23, 42, 0.7);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 16px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      position: relative;
+      box-shadow: inset 0 2px 10px rgba(0,0,0,0.9);
+      flex-shrink: 0;
+    }
+
+    .goal-label {
+      font-size: 0.95rem;
+      font-weight: 800;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .goal-input-wrapper { display: flex; gap: 16px; align-items: center; }
+
+    .goal-input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 1.15rem;
+      font-weight: 700;
+    }
+
+    .run-btn {
+      background: var(--gradient);
+      border: none; outline: none;
+      color: #05070f;
+      font-weight: 900;
+      font-size: 1.1rem;
+      padding: 10px 24px;
+      border-radius: 10px;
+      cursor: pointer;
+      box-shadow: 0 0 16px rgba(6,182,212,0.4);
+      transition: all 0.2s ease;
+      display: flex; align-items: center; gap: 8px;
+    }
+
+    .run-btn:hover { transform: translateY(-2px); box-shadow: 0 0 24px rgba(6,182,212,0.6); }
+
+    .graph-container {
+      flex: 1;
+      background: rgba(10,14,26,0.5);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 0;
+    }
+
+    .svg-overlay {
+      position: absolute; inset: 0;
+      width: 100%; height: 100%;
+      pointer-events: none; z-index: 1;
+    }
+
+    .graph-node {
+      position: absolute;
+      background: var(--card);
+      border: 1.5px solid var(--border);
+      border-radius: 14px;
+      padding: 12px 18px;
+      font-size: 0.95rem;
+      font-weight: 800;
+      display: flex; align-items: center; gap: 10px;
+      z-index: 2;
+      box-shadow: var(--shadow);
+      transition: all 0.3s;
+    }
+
+    .graph-node:hover { border-color: var(--accent); transform: scale(1.05); }
+
+    .graph-node.center-hub {
+      background: linear-gradient(135deg, rgba(99,102,241,0.35), rgba(6,182,212,0.35));
+      border: 2.5px solid var(--accent);
+      border-radius: 50%;
+      width: 162px; height: 162px;
+      display: flex; flex-direction: column;
+      justify-content: center; align-items: center;
+      font-size: 1.05rem; text-align: center;
+      box-shadow: 0 0 35px rgba(129,140,248,0.5);
+      animation: hubGlow 3s ease-in-out infinite alternate;
+      padding: 12px;
+    }
+
+    .graph-node.tool-node {
+      background: rgba(6,182,212,0.08);
+      border: 1.5px solid var(--accent2);
+      color: var(--accent2);
+      box-shadow: 0 0 15px rgba(6,182,212,0.15);
+    }
+
+    @keyframes hubGlow {
+      from { box-shadow: 0 0 25px rgba(129,140,248,0.4); }
+      to   { box-shadow: 0 0 50px rgba(6,182,212,0.6); }
+    }
+
+    .terminal-console {
+      height: 200px;
+      background: #020308;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      display: flex; flex-direction: column;
+      overflow: hidden;
+      font-family: 'Fira Code', monospace;
+      box-shadow: inset 0 0 20px rgba(0,0,0,0.95);
+      flex-shrink: 0;
+    }
+
+    .terminal-header {
+      background: #0a0e1a;
+      padding: 8px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      font-size: 0.85rem; color: var(--text-dim);
+    }
+
+    .terminal-body {
+      flex: 1;
+      padding: 12px 16px;
+      overflow-y: auto;
+      font-size: 0.95rem;
+      line-height: 1.6;
+      display: flex; flex-direction: column; gap: 6px;
+    }
+
+    .log-line { display: flex; gap: 10px; }
+    .log-time  { color: var(--accent); flex-shrink: 0; }
+    .log-tag   { font-weight: 700; flex-shrink: 0; }
+    .log-text  { color: var(--text-dim); }
+
+    .db-shelf-container { display: flex; flex-direction: column; gap: 12px; }
+
+    .db-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 12px 16px;
+      display: flex; align-items: center; justify-content: space-between;
+      transition: border-color 0.25s;
+    }
+
+    .db-card:hover { border-color: var(--accent2); }
+
+    .db-left { display: flex; align-items: center; gap: 12px; }
+
+    .db-icon {
+      width: 40px; height: 40px;
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.3rem;
+      background: rgba(30,41,59,0.85);
+      border: 1px solid var(--border);
+    }
+
+    .db-info h4 { font-size: 0.95rem; font-weight: 800; }
+    .db-info p  { font-size: 0.8rem; color: var(--text-dim); margin-top: 2px; }
+    .db-counter { font-size: 1.6rem; font-weight: 900; color: var(--accent2); }
+
+    .registry-box {
+      background: rgba(16,185,129,0.03);
+      border: 1px solid rgba(16,185,129,0.35);
+      border-radius: 16px;
+      padding: 16px;
+      display: flex; flex-direction: column; gap: 12px;
+    }
+
+    .registry-header {
+      display: flex; align-items: center; justify-content: space-between;
+      font-size: 0.95rem; font-weight: 800; color: var(--success);
+    }
+
+    .registry-status {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 0.8rem;
+      background: rgba(16,185,129,0.15);
+      padding: 3px 10px; border-radius: 12px;
+    }
+
+    .registry-body { display: flex; gap: 16px; align-items: center; }
+
+    .gauge-wrapper {
+      width: 80px; height: 80px;
+      position: relative;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    .gauge-text {
+      position: absolute;
+      font-size: 1rem; font-weight: 900;
+      color: var(--success); text-align: center;
+    }
+
+    .gauge-text span { display: block; font-size: 0.6rem; color: var(--text-dim); margin-top: 2px; }
+
+    .registry-details { flex: 1; font-size: 0.9rem; line-height: 1.6; color: var(--text-dim); }
+
+    .citation-list-header {
+      font-size: 0.95rem; font-weight: 800; color: var(--accent);
+      margin-top: 10px; text-transform: uppercase; letter-spacing: 0.8px;
+    }
+
+    .citation-ticker {
+      flex: 1;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: rgba(10,14,26,0.55);
+      padding: 12px;
+      overflow-y: auto;
+      font-size: 0.85rem;
+      display: flex; flex-direction: column; gap: 8px;
+    }
+
+    .citation-item {
+      display: flex; gap: 8px;
+      padding: 8px; border-radius: 8px;
+      background: rgba(30,41,59,0.25);
+      border-left: 3px solid var(--border);
+    }
+
+    .citation-item.verified-citation {
+      border-left-color: var(--success);
+      background: rgba(16,185,129,0.04);
+    }
+
+    .citation-num { color: var(--success); font-weight: 800; }
+
+    footer {
+      height: 70px;
+      padding: 0 32px;
+      display: flex; align-items: center; justify-content: space-between;
+      border-top: 1px solid var(--border);
+      background: rgba(10,14,26,0.85);
+      backdrop-filter: blur(12px);
+      z-index: 10; position: relative;
+      flex-shrink: 0;
+    }
+
+    .stats-container { display: flex; gap: 40px; align-items: center; }
+
+    .stat-item { display: flex; flex-direction: column; gap: 3px; }
+
+    .stat-val { font-size: 1.5rem; font-weight: 900; letter-spacing: -0.5px; }
+    .stat-lbl { font-size: 0.85rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.8px; }
+
+    .footer-actions { display: flex; gap: 16px; }
+
+    .action-btn {
+      background: rgba(30,41,59,0.7);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-size: 0.9rem; font-weight: 700;
+      padding: 10px 18px; border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex; align-items: center; gap: 8px;
+    }
+
+    .action-btn:hover { background: var(--card-hover); border-color: var(--accent); }
+
+    /* Graph node positions — symmetric left / right */
+    #node-user        { top: 8%;  left: 4%; }
+    #node-planner     { top: 26%; left: 3%; }
+    #node-supervisor  { top: 46%; left: 4%; }
+    #node-researcher  { top: 66%; left: 3%; }
+    #node-archivist   { top: 82%; left: 4%; }
+
+    #node-planrefiner { top: 8%;  right: 4%; }
+    #node-deepsearch  { top: 26%; right: 3%; }
+    #node-scientific  { top: 46%; right: 4%; }
+    #node-guard       { top: 66%; right: 3%; }
+    #node-finalizer   { top: 82%; right: 4%; }
+
+    /* Skill chips */
+    .skill-chips {
+      display: flex;
+      gap: 7px;
+      flex-wrap: wrap;
+      flex-shrink: 0;
+      padding: 0 2px;
+    }
+    .skill-chip {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 11px;
+      background: rgba(17, 24, 39, 0.6);
+      border: 1px solid rgba(51, 65, 85, 0.5);
+      border-radius: 20px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--text-dim);
+      white-space: nowrap;
+      transition: all 0.3s ease;
+    }
+    .skill-chip.active-skill {
+      border-color: var(--accent2);
+      color: #fff;
+      background: rgba(6, 182, 212, 0.14);
+      box-shadow: 0 0 10px rgba(6, 182, 212, 0.35);
+    }
+
+    /* Prompt input */
+    .prompt-input-box {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      background: rgba(10, 14, 26, 0.75);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 9px 14px;
+      flex-shrink: 0;
+      transition: border-color 0.3s;
+    }
+    .prompt-input-box:focus-within { border-color: rgba(129, 140, 248, 0.5); }
+    .prompt-label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      white-space: nowrap;
+      font-family: 'Fira Code', monospace;
+    }
+    .prompt-input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: var(--text);
+      font-family: 'Fira Code', monospace;
+      font-size: 0.9rem;
+      min-width: 0;
+    }
+    .prompt-input::placeholder { color: var(--text-muted); }
+    .prompt-send-btn {
+      background: var(--gradient);
+      border: none;
+      color: #05070f;
+      font-weight: 800;
+      font-size: 0.82rem;
+      padding: 6px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: opacity 0.2s;
+    }
+    .prompt-send-btn:hover { opacity: 0.85; }
+  </style>
+</head>
+<body>
+
+  <!-- ==================== INTRO SCREEN ==================== -->
+  <div id="intro-screen">
+
+    <!-- Top: Title -->
+    <div class="intro-top">
+      <h1 class="intro-title">LangAIAgent</h1>
+      <p class="intro-subtitle">AI 멀티에이전트 자율 연구 시스템</p>
+    </div>
+
+    <!-- Center: Orbit + Skills Panel -->
+    <div class="intro-middle">
+
+      <!-- Orbit Animation -->
+      <div class="intro-orbit-wrapper">
+        <div id="orbit-container">
+          <svg class="orbit-rings" viewBox="0 0 580 580">
+            <circle cx="290" cy="290" r="222" fill="none" stroke="rgba(129,140,248,0.13)" stroke-width="1.5" stroke-dasharray="7 5"/>
+          </svg>
+
+          <div class="intro-hub">
+            <div class="hub-emoji">🤖</div>
+            <div class="hub-text">LangAI<br>Orchestrator</div>
+          </div>
+
+          <div id="orbit-inner"></div>
+        </div>
+      </div>
+
+      <!-- Skills List Panel -->
+      <div class="skills-panel">
+        <div class="skills-panel-title">🔧 Research Skills</div>
+        <div class="skill-item"><span class="skill-emoji">🌐</span><span>웹 검색</span><span class="skill-tag">Tavily</span></div>
+        <div class="skill-item"><span class="skill-emoji">📄</span><span>특허 DB</span><span class="skill-tag">BigQuery</span></div>
+        <div class="skill-item"><span class="skill-emoji">📖</span><span>논문 엔진</span><span class="skill-tag">ArXiv</span></div>
+        <div class="skill-item"><span class="skill-emoji">🧬</span><span>과학적 추론</span><span class="skill-tag">R1</span></div>
+        <div class="skill-item"><span class="skill-emoji">⚖️</span><span>인문 분석</span><span class="skill-tag">Qwen3</span></div>
+        <div class="skill-item"><span class="skill-emoji">🗄️</span><span>RAG 검색</span><span class="skill-tag">ChromaDB</span></div>
+        <div class="skill-item"><span class="skill-emoji">🎥</span><span>미디어 트래킹</span><span class="skill-tag">API</span></div>
+        <div class="skill-item"><span class="skill-emoji">🌏</span><span>한국어 번역</span><span class="skill-tag">Local</span></div>
+      </div>
+
+    </div>
+
+    <!-- Bottom: Goal Input -->
+    <div class="intro-goal-section">
+      <div class="intro-input-wrapper">
+        <input type="text" class="intro-goal-input" id="intro-goal-input"
+               value="로봇의 감성 표현 및 HRI 사용자 경험(UX) 연구 최적화를 위한 통합 로봇 모션 프레임워크 설계"
+               placeholder="연구 과제를 입력하세요...">
+        <button class="intro-start-btn" id="intro-start-btn">
+          <span>START RESEARCH</span>
+          <span>▶</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== DASHBOARD ==================== -->
+  <div id="dashboard">
+
+    <!-- HEADER -->
+    <header>
+      <div class="logo-container">
+        <div class="logo-badge">L</div>
+        <div>
+          <h1 class="logo-title">LangAIAgent</h1>
+        </div>
+      </div>
+      <div class="system-status">
+        <div class="status-item">
+          <div class="pulse-dot"></div>
+          <span style="font-weight:700;">LIVE ORCHESTRATION ACTIVE</span>
+        </div>
+        <div class="status-item" style="color:var(--accent2);">
+          <span style="font-weight:700;">RUNTIME: 24/7/365</span>
+        </div>
+        <div class="status-item">
+          <span>UTC+9: <strong id="clock-display">00:00:00</strong></span>
+        </div>
+      </div>
+    </header>
+
+    <!-- MAIN -->
+    <main>
+
+      <!-- LEFT PANEL: Agent Swarm -->
+      <div class="panel">
+        <div class="panel-header">
+          <span>👥 Active Agent Swarm</span>
+        </div>
+        <div class="panel-body" id="agents-swarm">
+
+          <!-- 1. Supervisor -->
+          <div class="agent-card active-thinking" data-agent="supervisor" id="card-supervisor">
+            <div class="agent-main-row">
+              <div class="agent-icon" style="background:linear-gradient(135deg,#f43f5e,#ec4899)">🎯</div>
+              <div class="agent-info">
+                <div class="agent-name">Supervisor <span class="model-badge mb-gemini-pro">Gemini Pro</span></div>
+              </div>
+              <div class="agent-status-light as-thinking"></div>
+            </div>
+            <div class="agent-telemetry">
+              <div class="agent-telemetry-desc" id="status-desc-supervisor">작업 조율 중...</div>
+              <div class="agent-telemetry-bar-bg"><div class="agent-telemetry-bar-fill" id="progress-supervisor" style="width:45%;"></div></div>
+            </div>
+          </div>
+
+          <!-- 2. Planner -->
+          <div class="agent-card" data-agent="planner" id="card-planner">
+            <div class="agent-main-row">
+              <div class="agent-icon" style="background:linear-gradient(135deg,#818cf8,#6366f1)">📋</div>
+              <div class="agent-info">
+                <div class="agent-name">Planner <span class="model-badge mb-gemini-pro">Gemini Pro</span></div>
+              </div>
+              <div class="agent-status-light as-idle"></div>
+            </div>
+            <div class="agent-telemetry">
+              <div class="agent-telemetry-desc" id="status-desc-planner">대기 중</div>
+              <div class="agent-telemetry-bar-bg"><div class="agent-telemetry-bar-fill" id="progress-planner" style="width:0%;"></div></div>
+            </div>
+          </div>
+
+          <!-- 3. Plan Refiner -->
+          <div class="agent-card" data-agent="planrefiner" id="card-planrefiner">
+            <div class="agent-main-row">
+              <div class="agent-icon" style="background:linear-gradient(135deg,#6366f1,#4f46e5)">⚙️</div>
+              <div class="agent-info">
+                <div class="agent-name">Plan Refiner <span class="model-badge mb-gemini-pro">Gemini Pro</span></div>
+              </div>
+              <div class="agent-status-light as-idle"></div>
+            </div>
+            <div class="agent-telemetry">
+              <div class="agent-telemetry-desc" id="status-desc-planrefiner">대기 중</div>
+              <div class="agent-telemetry-bar-bg"><div class="agent-telemetry-bar-fill" id="progress-planrefiner" style="width:0%;"></div></div>
+            </div>
+          </div>
+
+          <!-- 4. Researcher -->
+          <div class="agent-card" data-agent="researcher" id="card-researcher">
+            <div class="agent-main-row">
+              <div class="agent-icon" style="background:linear-gradient(135deg,#06b6d4,#0891b2)">✍️</div>
+              <div class="agent-info">
+                <div class="agent-name">Researcher <span class="model-badge mb-gemini-flash">Gemini Flash</span></div>
+              </div>
+              <div class="agent-status-light as-idle"></div>
+            </div>
+            <div class="agent-telemetry">
+              <div class="agent-telemetry-desc" id="status-desc-researcher">대기 중</div>
+              <div class="agent-telemetry-bar-bg"><div class="agent-telemetry-bar-fill" id="progress-researcher" style="width:0%;"></div></div>
+            </div>
+          </div>
+
+          <!-- 5. Deep Researcher -->
+          <div class="agent-card" data-agent="deep" id="card-deep">
+            <div class="agent-main-row">
+              <div class="agent-icon" style="background:linear-gradient(135deg,#10b981,#059669)">🔍</div>
+              <div class="agent-info">
+                <div class="agent-name">Deep Researcher <span class="model-badge mb-qwen">Qwen-3 MoE</span></div>
+              </div>
+              <div class="agent-status-light as-idle"></div>
+            </div>
+            <div class="agent-telemetry">
+              <div class="agent-telemetry-desc" id="status-desc-deep">대기 중</div>
+              <div class="agent-telemetry-bar-bg"><div class="agent-telemetry-bar-fill" id="progress-deep" style="width:0%;"></div></div>
+            </div>
+          </div>
+
+          <!-- 6. Scientific -->
+          <div class="agent-card" data-agent="scientific" id="card-scientific">
+            <div class="agent-main-row">
+              <div class="agent-icon" style="background:linear-gradient(135deg,#f59e0b,#d97706)">🧬</div>
+              <div class="agent-info">
+                <div class="agent-name">Scientific <span class="model-badge mb-deepseek">DeepSeek-R1</span></div>
+              </div>
+              <div class="agent-status-light as-idle"></div>
+            </div>
+            <div class="agent-telemetry">
+              <div class="agent-telemetry-desc" id="status-desc-scientific">대기 중</div>
+              <div class="agent-telemetry-bar-bg"><div class="agent-telemetry-bar-fill" id="progress-scientific" style="width:0%;"></div></div>
+            </div>
+          </div>
+
+          <!-- 7. Psychology -->
+          <div class="agent-card" data-agent="psychology" id="card-psychology">
+            <div class="agent-main-row">
+              <div class="agent-icon" style="background:linear-gradient(135deg,#ec4899,#db2777)">🧠</div>
+              <div class="agent-info">
+                <div class="agent-name">Psychology <span class="model-badge mb-gemma">Gemma-4</span></div>
+              </div>
+              <div class="agent-status-light as-idle"></div>
+            </div>
+            <div class="agent-telemetry">
+              <div class="agent-telemetry-desc" id="status-desc-psychology">대기 중</div>
+              <div class="agent-telemetry-bar-bg"><div class="agent-telemetry-bar-fill" id="progress-psychology" style="width:0%;"></div></div>
+            </div>
+          </div>
+
+          <!-- 8. Humanities -->
+          <div class="agent-card" data-agent="humanities" id="card-humanities">
+            <div class="agent-main-row">
+              <div class="agent-icon" style="background:linear-gradient(135deg,#14b8a6,#0d9488)">⚖️</div>
+              <div class="agent-info">
+                <div class="agent-name">Humanities <span class="model-badge mb-qwen">Qwen-3 MoE</span></div>
+              </div>
+              <div class="agent-status-light as-idle"></div>
+            </div>
+            <div class="agent-telemetry">
+              <div class="agent-telemetry-desc" id="status-desc-humanities">대기 중</div>
+              <div class="agent-telemetry-bar-bg"><div class="agent-telemetry-bar-fill" id="progress-humanities" style="width:0%;"></div></div>
+            </div>
+          </div>
+
+          <!-- 9. Design -->
+          <div class="agent-card" data-agent="design" id="card-design">
+            <div class="agent-main-row">
+              <div class="agent-icon" style="background:linear-gradient(135deg,#a78bfa,#8b5cf6)">🎨</div>
+              <div class="agent-info">
+                <div class="agent-name">Design <span class="model-badge mb-deepseek">DeepSeek-R1</span></div>
+              </div>
+              <div class="agent-status-light as-idle"></div>
+            </div>
+            <div class="agent-telemetry">
+              <div class="agent-telemetry-desc" id="status-desc-design">대기 중</div>
+              <div class="agent-telemetry-bar-bg"><div class="agent-telemetry-bar-fill" id="progress-design" style="width:0%;"></div></div>
+            </div>
+          </div>
+
+          <!-- 10. Archivist -->
+          <div class="agent-card" data-agent="archivist" id="card-archivist">
+            <div class="agent-main-row">
+              <div class="agent-icon" style="background:linear-gradient(135deg,#818cf8,#4f46e5)">📚</div>
+              <div class="agent-info">
+                <div class="agent-name">Archivist <span class="model-badge mb-qwen">Local MoE</span></div>
+              </div>
+              <div class="agent-status-light as-idle"></div>
+            </div>
+            <div class="agent-telemetry">
+              <div class="agent-telemetry-desc" id="status-desc-archivist">대기 중</div>
+              <div class="agent-telemetry-bar-bg"><div class="agent-telemetry-bar-fill" id="progress-archivist" style="width:0%;"></div></div>
+            </div>
+          </div>
+
+          <!-- 11. Warden Guard -->
+          <div class="agent-card" data-agent="warden" id="card-warden">
+            <div class="agent-main-row">
+              <div class="agent-icon" style="background:linear-gradient(135deg,#f43f5e,#e11d48)">🛡️</div>
+              <div class="agent-info">
+                <div class="agent-name">Warden Guard <span class="model-badge mb-gemini-flash">Gemini Flash</span></div>
+              </div>
+              <div class="agent-status-light as-idle"></div>
+            </div>
+            <div class="agent-telemetry">
+              <div class="agent-telemetry-desc" id="status-desc-warden">대기 중</div>
+              <div class="agent-telemetry-bar-bg"><div class="agent-telemetry-bar-fill" id="progress-warden" style="width:0%;"></div></div>
+            </div>
+          </div>
+
+          <!-- 12. Finalizer -->
+          <div class="agent-card" data-agent="finalizer" id="card-finalizer">
+            <div class="agent-main-row">
+              <div class="agent-icon" style="background:linear-gradient(135deg,#a78bfa,#7c3aed)">📦</div>
+              <div class="agent-info">
+                <div class="agent-name">Finalizer <span class="model-badge mb-gemini-pro">Gemini Pro</span></div>
+              </div>
+              <div class="agent-status-light as-idle"></div>
+            </div>
+            <div class="agent-telemetry">
+              <div class="agent-telemetry-desc" id="status-desc-finalizer">대기 중</div>
+              <div class="agent-telemetry-bar-bg"><div class="agent-telemetry-bar-fill" id="progress-finalizer" style="width:0%;"></div></div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- CENTER PANEL -->
+      <div class="center-workspace">
+
+        <div class="goal-input-box">
+          <div class="goal-label">
+            <span>🎯 RESEARCH GOAL</span>
+            <span style="margin-left:auto;color:var(--success);font-size:0.75rem;font-weight:600;">● RUNNING</span>
+          </div>
+          <input type="text" class="goal-input" id="goal-input-el"
+                 value="로봇의 감성 표현 및 HRI 사용자 경험(UX) 연구 최적화를 위한 통합 로봇 모션 프레임워크 설계"
+                 readonly style="cursor:default;">
+        </div>
+
+        <!-- Skill Chips -->
+        <div class="skill-chips">
+          <div class="skill-chip" data-skill="web">🌐 Web Search</div>
+          <div class="skill-chip" data-skill="patent">📄 Patent BigQuery</div>
+          <div class="skill-chip" data-skill="paper">📖 Paper Engine</div>
+          <div class="skill-chip" data-skill="scientific">🧬 Scientific CoT</div>
+          <div class="skill-chip" data-skill="humanities">⚖️ Humanities</div>
+          <div class="skill-chip" data-skill="rag">🗄️ RAG / ChromaDB</div>
+          <div class="skill-chip" data-skill="media">🎥 Media Tracking</div>
+          <div class="skill-chip" data-skill="translation">🌏 KO Translation</div>
+        </div>
+
+        <!-- Orchestrator Graph -->
+        <div class="graph-container">
+          <svg class="svg-overlay" id="graph-svg">
+            <defs>
+              <linearGradient id="grad-line" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%"   stop-color="#818cf8" stop-opacity="0.35"/>
+                <stop offset="100%" stop-color="#06b6d4" stop-opacity="0.35"/>
+              </linearGradient>
+              <linearGradient id="grad-active" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%"   stop-color="#f43f5e" stop-opacity="0.9"/>
+                <stop offset="100%" stop-color="#06b6d4" stop-opacity="0.9"/>
+              </linearGradient>
+              <linearGradient id="grad-tool" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%"   stop-color="#06b6d4" stop-opacity="0.4"/>
+                <stop offset="100%" stop-color="#10b981" stop-opacity="0.4"/>
+              </linearGradient>
+            </defs>
+          </svg>
+
+          <div class="graph-node center-hub" id="node-center">
+            <div style="font-size:1.5rem;margin-bottom:4px;">🤖</div>
+            <div style="font-weight:900;line-height:1.2;">LangAI<br>Orchestrator</div>
+          </div>
+
+          <div class="graph-node" id="node-user">👤 User Goal</div>
+          <div class="graph-node" id="node-planner">📋 Planner</div>
+          <div class="graph-node" id="node-planrefiner">⚙️ Plan Refiner</div>
+          <div class="graph-node" id="node-supervisor">🎯 Supervisor</div>
+          <div class="graph-node" id="node-researcher">✍️ Researcher</div>
+          <div class="graph-node" id="node-archivist">📚 Archivist (RAG)</div>
+          <div class="graph-node" id="node-deepsearch">🔍 Deep Researcher</div>
+          <div class="graph-node" id="node-scientific">🧬 Scientific (R1)</div>
+          <div class="graph-node" id="node-guard">🛡️ Registry Guard</div>
+          <div class="graph-node" id="node-finalizer">📦 Finalizer (PDF)</div>
+
+        </div>
+
+        <!-- Terminal -->
+        <div class="terminal-console">
+          <div class="terminal-header">
+            <span>CONSOLE LOG STREAM (REAL-TIME TELEMETRY)</span>
+            <span style="color:var(--success);font-weight:600;">● ONLINE</span>
+          </div>
+          <div class="terminal-body" id="terminal-body-el">
+            <div class="log-line">
+              <span class="log-time">[--:--:--]</span>
+              <span class="log-tag" style="color:var(--accent);">[SYSTEM]</span>
+              <span class="log-text">LangAIAgent Core System Initialized. 24/7 autonomous daemon running...</span>
+            </div>
+            <div class="log-line">
+              <span class="log-time">[--:--:--]</span>
+              <span class="log-tag" style="color:var(--accent2);">[Archivist]</span>
+              <span class="log-text">Scanning project space... Identified local database checkpoints.sqlite.</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Prompt Input -->
+        <div class="prompt-input-box">
+          <span class="prompt-label">❯</span>
+          <input type="text" class="prompt-input" id="prompt-input"
+                 placeholder="Supervisor에게 지시 또는 피드백을 입력하세요...">
+          <button class="prompt-send-btn" id="btn-send-prompt">전송 ↵</button>
+        </div>
+
+      </div>
+
+      <!-- RIGHT PANEL -->
+      <div class="panel">
+        <div class="panel-header">
+          <span>🗄️ Knowledge Base & Verification</span>
+          <span style="font-size:0.85rem;color:var(--success);">RAG Connected</span>
+        </div>
+        <div class="panel-body">
+
+          <div class="db-shelf-container">
+            <div class="db-card">
+              <div class="db-left">
+                <div class="db-icon" style="color:var(--accent);">📖</div>
+                <div class="db-info">
+                  <h4>Academic Papers</h4>
+                </div>
+              </div>
+              <div class="db-counter" id="count-papers">255</div>
+            </div>
+            <div class="db-card">
+              <div class="db-left">
+                <div class="db-icon" style="color:var(--accent2);">📄</div>
+                <div class="db-info">
+                  <h4>Google Patents</h4>
+                </div>
+              </div>
+              <div class="db-counter" id="count-patents">63</div>
+            </div>
+            <div class="db-card">
+              <div class="db-left">
+                <div class="db-icon" style="color:var(--success);">🌐</div>
+                <div class="db-info">
+                  <h4>Web Indexes</h4>
+                </div>
+              </div>
+              <div class="db-counter" id="count-web">1,687</div>
+            </div>
+          </div>
+
+          <div class="registry-box">
+            <div class="registry-header">
+              <span>🛡️ SQLite Registry Guard</span>
+              <div class="registry-status">
+                <div style="width:6px;height:6px;border-radius:50%;background:var(--success);"></div>
+                <span>Active</span>
+              </div>
+            </div>
+            <div class="registry-body">
+              <div class="gauge-wrapper">
+                <svg width="80" height="80" viewBox="0 0 36 36">
+                  <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="rgba(244,63,94,0.15)" stroke-width="3"/>
+                  <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="var(--success)" stroke-width="3" stroke-dasharray="100,100"/>
+                </svg>
+                <div class="gauge-text">0%<span>Halluc.</span></div>
+              </div>
+              <div class="registry-details">
+                <strong>Hallucination 0%</strong><br>
+                모든 인용 실시간 대조 검증
+              </div>
+            </div>
+          </div>
+
+          <div class="citation-list-header">📚 VERIFIED REFERENCE REGISTRY</div>
+          <div class="citation-ticker" id="citation-ticker-el">
+            <div class="citation-item verified-citation">
+              <span class="citation-num">[1]</span>
+              <div class="citation-info"><strong>Paper</strong>: Teaching Robots to Span the Space of Expressive Motion (IROS 2022)</div>
+            </div>
+            <div class="citation-item verified-citation">
+              <span class="citation-num">[2]</span>
+              <div class="citation-info"><strong>Paper</strong>: ProDMPs: Unified Perspective on DMP (arXiv:2210.01531)</div>
+            </div>
+            <div class="citation-item verified-citation">
+              <span class="citation-num">[3]</span>
+              <div class="citation-info"><strong>Patent</strong>: Cognitive Intelligence via Eye (US-11382545-B2)</div>
+            </div>
+            <div class="citation-item verified-citation">
+              <span class="citation-num">[4]</span>
+              <div class="citation-info"><strong>Paper</strong>: ELEGNT Framework Apple ML Research (Apple 2025)</div>
+            </div>
+            <div class="citation-item verified-citation">
+              <span class="citation-num">[5]</span>
+              <div class="citation-info"><strong>Paper</strong>: wCQ: Wait-Free Queue Bounded Memory (SPAA 2022)</div>
+            </div>
+            <div class="citation-item verified-citation">
+              <span class="citation-num">[6]</span>
+              <div class="citation-info"><strong>Paper</strong>: Disney Research Olaf Animated Robot (Disney 2025)</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer>
+      <div class="stats-container">
+        <div class="stat-item">
+          <span class="stat-val" style="color:var(--success);" id="loop-counter">763</span>
+          <span class="stat-lbl">QA Review Loops</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-val" style="color:var(--accent2);" id="master-reports-counter">29</span>
+          <span class="stat-lbl">Master Reports Built</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-val" style="color:var(--accent);" id="notes-counter">176</span>
+          <span class="stat-lbl">Scientific Notes</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-val" style="color:var(--warn);">₩75,000</span>
+          <span class="stat-lbl">Total API Cost</span>
+        </div>
+      </div>
+      <div class="footer-actions">
+        <button class="action-btn" id="btn-pause"><span>⏸</span><span>일시정지</span></button>
+        <button class="action-btn" id="btn-feedback" style="border-color:var(--warn);color:var(--warn);"><span>💬</span><span>피드백 주입</span></button>
+        <button class="action-btn" id="btn-download" style="background:rgba(16,185,129,0.1);border-color:var(--success);color:#6ee7b7;"><span>📥</span><span>PDF 다운로드</span></button>
+      </div>
+    </footer>
+
+  </div><!-- /#dashboard -->
+
+  <!-- ==================== SCRIPTS ==================== -->
+  <script>
+    // ===== INTRO ORBIT SETUP =====
+    const innerAgents = [
+      { emoji:'🎯', label:'지휘자',    color:'#f97316', bg:'linear-gradient(135deg,#dc2626,#f97316)' },
+      { emoji:'📋', label:'전략가',    color:'#a78bfa', bg:'linear-gradient(135deg,#7c3aed,#a78bfa)' },
+      { emoji:'✍️', label:'연구원',    color:'#3b82f6', bg:'linear-gradient(135deg,#2563eb,#3b82f6)' },
+      { emoji:'🔍', label:'조사관',    color:'#06b6d4', bg:'linear-gradient(135deg,#0891b2,#06b6d4)' },
+      { emoji:'📚', label:'아키비스트', color:'#34d399', bg:'linear-gradient(135deg,#059669,#34d399)' },
+      { emoji:'🛡️', label:'감시자',    color:'#fbbf24', bg:'linear-gradient(135deg,#d97706,#fbbf24)' },
+      { emoji:'🎨', label:'설계자',    color:'#f472b6', bg:'linear-gradient(135deg,#db2777,#f472b6)' },
+      { emoji:'📦', label:'편집자',    color:'#818cf8', bg:'linear-gradient(135deg,#4f46e5,#818cf8)' },
+      { emoji:'🧬', label:'분석가',    color:'#14b8a6', bg:'linear-gradient(135deg,#0f766e,#14b8a6)' },
+    ];
+
+    const outerSkills = [
+      { emoji:'🌐', label:'Web Search',    color:'#22d3ee' },
+      { emoji:'📄', label:'Patent DB',     color:'#06b6d4' },
+      { emoji:'📖', label:'Paper Engine',  color:'#a5b4fc' },
+      { emoji:'🧬', label:'Scientific CoT',color:'#6ee7b7' },
+      { emoji:'⚖️', label:'Humanities',    color:'#fcd34d' },
+      { emoji:'🗄️', label:'RAG/ChromaDB', color:'#f9a8d4' },
+      { emoji:'🎥', label:'Media Track',   color:'#fdba74' },
+      { emoji:'🌏', label:'KO Translation',color:'#86efac' },
+    ];
+
+    function buildOrbit(containerId, items, radius, itemSize, isAgent) {
+      const container = document.getElementById(containerId);
+      const cx = 290, cy = 290;
+      const half = itemSize / 2;
+
+      items.forEach((item, i) => {
+        const angle = (i / items.length) * Math.PI * 2 - Math.PI / 2;
+        const x = cx + radius * Math.cos(angle) - half;
+        const y = cy + radius * Math.sin(angle) - half;
+
+        const el = document.createElement('div');
+        if (isAgent) {
+          el.style.cssText = `position:absolute;left:${x}px;top:${y}px;width:${itemSize}px;height:${itemSize}px;border-radius:50%;background:${item.bg};display:flex;align-items:center;justify-content:center;font-size:${Math.round(itemSize*0.44)}px;box-shadow:0 0 20px ${item.color}66;cursor:default;`;
+        } else {
+          el.style.cssText = `position:absolute;left:${x}px;top:${y}px;width:${itemSize}px;height:${itemSize}px;border-radius:50%;background:rgba(15,23,42,0.85);border:2px solid ${item.color}99;display:flex;align-items:center;justify-content:center;font-size:${Math.round(itemSize*0.44)}px;box-shadow:0 0 14px ${item.color}44;cursor:default;`;
+        }
+        el.innerHTML = item.emoji;
+        el.title = item.label;
+
+        // Label placed below icon
+        const lbl = document.createElement('div');
+        const lblX = cx + radius * Math.cos(angle) - 42;
+        const lblY = cy + radius * Math.sin(angle) + half + 6;
+        lbl.style.cssText = `position:absolute;left:${lblX}px;top:${lblY}px;font-size:14px;font-weight:700;color:${item.color};text-align:center;width:88px;pointer-events:none;text-shadow:0 0 8px ${item.color}88;letter-spacing:0.2px;`;
+        lbl.textContent = item.label;
+
+        container.appendChild(el);
+        container.appendChild(lbl);
+      });
+    }
+
+    buildOrbit('orbit-inner', innerAgents, 222, 74, true);
+
+    // ===== INTRO → DASHBOARD TRANSITION =====
+    function startResearch() {
+      const goal = document.getElementById('intro-goal-input').value.trim();
+      if (goal) document.getElementById('goal-input-el').value = goal;
+
+      const intro = document.getElementById('intro-screen');
+      const dashboard = document.getElementById('dashboard');
+
+      intro.style.opacity = '0';
+      intro.style.pointerEvents = 'none';
+
+      setTimeout(() => {
+        intro.style.display = 'none';
+        dashboard.classList.add('active');
+
+        setTimeout(() => {
+          drawLines();
+          // Log research goal
+          const now = new Date();
+          const goalVal = document.getElementById('goal-input-el').value;
+          const logLine = document.createElement('div');
+          logLine.className = 'log-line';
+          logLine.innerHTML = `
+            <span class="log-time">[${now.toTimeString().split(' ')[0]}]</span>
+            <span class="log-tag" style="color:var(--accent2);">[SYSTEM]</span>
+            <span class="log-text" style="color:#fff;font-weight:bold;">연구 과제 시작: "${goalVal}"</span>
+          `;
+          terminalBody.appendChild(logLine);
+          terminalBody.scrollTop = terminalBody.scrollHeight;
+          // Start simulation pipeline
+          executePipelineStep();
+        }, 200);
+      }, 650);
+    }
+
+    document.getElementById('intro-start-btn').addEventListener('click', startResearch);
+    document.getElementById('intro-goal-input').addEventListener('keydown', e => {
+      if (e.key === 'Enter') startResearch();
+    });
+
+    // ===== DASHBOARD CLOCK =====
+    function updateClock() {
+      const now = new Date();
+      document.getElementById('clock-display').textContent = now.toTimeString().split(' ')[0];
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    // ===== GRAPH LINES =====
+    const nodeIds = ['user','archivist','planner','planrefiner','supervisor','researcher','deepsearch','scientific','guard','finalizer'];
+    const toolLinks = [];
+
+    const svg = document.getElementById('graph-svg');
+
+    function drawLines() {
+      svg.querySelectorAll('path').forEach(p => p.remove());
+
+      const hub = document.getElementById('node-center').getBoundingClientRect();
+      const containerRect = svg.getBoundingClientRect();
+      const hubX = hub.left + hub.width / 2 - containerRect.left;
+      const hubY = hub.top + hub.height / 2 - containerRect.top;
+
+      nodeIds.forEach(id => {
+        const el = document.getElementById('node-' + id);
+        if (!el) return;
+        const rect = el.getBoundingClientRect();
+        const nodeX = rect.left + rect.width / 2 - containerRect.left;
+        const nodeY = rect.top + rect.height / 2 - containerRect.top;
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('d', `M ${hubX} ${hubY} L ${nodeX} ${nodeY}`);
+        path.setAttribute('id', `line-${id}`);
+        path.setAttribute('stroke', 'url(#grad-line)');
+        path.setAttribute('stroke-width', '2');
+        path.setAttribute('stroke-dasharray', '6, 6');
+        path.style.animation = 'dash 30s linear infinite';
+        svg.appendChild(path);
+      });
+
+      toolLinks.forEach(link => {
+        const fromEl = document.getElementById('node-' + link.from);
+        const toEl   = document.getElementById('node-' + link.to);
+        if (!fromEl || !toEl) return;
+        const fr = fromEl.getBoundingClientRect();
+        const tr = toEl.getBoundingClientRect();
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('d', `M ${fr.left+fr.width/2-containerRect.left} ${fr.top+fr.height/2-containerRect.top} L ${tr.left+tr.width/2-containerRect.left} ${tr.top+tr.height/2-containerRect.top}`);
+        path.setAttribute('id', `line-${link.from}-to-${link.to}`);
+        path.setAttribute('stroke', 'url(#grad-tool)');
+        path.setAttribute('stroke-width', '2');
+        path.setAttribute('stroke-dasharray', '4, 4');
+        path.style.animation = 'dash 40s linear infinite';
+        svg.appendChild(path);
+      });
+    }
+
+    window.addEventListener('resize', drawLines);
+
+    const styleSheet = document.createElement('style');
+    styleSheet.innerText = `@keyframes dash { to { stroke-dashoffset: -1000; } }`;
+    document.head.appendChild(styleSheet);
+
+    // ===== EXECUTION PIPELINE =====
+    const executionPipeline = [
+      { agent:'planner',    tag:'[Planner]',       text:'3가지 로봇 폼팩터(자율이동형, 관절로봇형, 인간형)별 UX 기획 마스터 플랜 가안 생성 완료.', desc:'마스터플랜 프레임워크 설계 중...', color:'var(--accent)',  nodeGlow:'planner',    duration:3500 },
+      { agent:'planrefiner',tag:'[Plan Refiner]',   text:'Planner의 가안을 토대로 세부 장편 인덱스 및 매핑 레이어(12개 섹션) 세분화 구축.',         desc:'서브플랜 매칭 및 정제 중...',    color:'var(--accent)',  nodeGlow:'planrefiner',duration:3000 },
+      { agent:'deep',       tag:'[Deep Researcher]',text:'Tavily Web Search 및 BigQuery Google Patents 데이터 스크래핑 활성화. 관련 특허 4건 검색.', desc:'특허 및 최신 UX 논문 실시간 서칭 중...', color:'var(--success)', nodeGlow:'deepsearch', skillChips:['web','patent','paper'], duration:5000 },
+      { agent:'archivist',  tag:'[Archivist]',      text:'스크랩 문서 임베딩 가공 및 로컬 ChromaDB 벡터 스캔 완료. 지식 베이스 적재 성공.',          desc:'ChromaDB 벡터 인덱싱 생성 중...', color:'var(--accent)', nodeGlow:'archivist', skillChips:['rag'], duration:3000 },
+      { agent:'scientific', tag:'[Scientific]',     text:'DeepSeek-R1 추론: 락프리 동시성 큐 물리 모터 제어 및 모션 지터 방지 궤적 수식 최적화 연산 완료.', desc:'Gemma-4-31B 로컬 역학 추론 실행 중...', color:'var(--warn)', nodeGlow:'scientific', skillChips:['scientific'], duration:5000 },
+      { agent:'design',     tag:'[Design]',         text:'각 로봇 폼팩터별 물리적 UX Capability 매트릭스 도출 완료. 3단계 핵심 시나리오 기획 완성.', desc:'UX Capability 구조 도출 중...',   color:'var(--accent2)', nodeGlow:null, skillChips:['rag'], duration:4000 },
+      { agent:'psychology', tag:'[Psychology]',     text:'감성 표현 모션에 대한 인지적 피로도 최소화 및 HRI 심리 매핑 정밀 분석 가이드라인 도출.', desc:'인간-로봇 상호작용 감성 분석 중...', color:'var(--danger)', nodeGlow:null, skillChips:['humanities'], duration:4000 },
+      { agent:'humanities', tag:'[Humanities]',     text:'윤리적 안전 한계선(Safety Margin) 및 인문사회학적 관점의 서비스 디자인 정합성 인증 완료.', desc:'정치·사회적 정합성 및 가이드라인 검증 중...', color:'var(--success)', nodeGlow:null, skillChips:['humanities'], duration:3000 },
+      { agent:'warden',     tag:'[Warden Guard]',   text:'초안 집필 방향 정합성 모니터링: 피드백 루프 이탈 여부 실시간 확인. 이상 없음.',            desc:'목표 이탈 여부 정합성 실시간 모니터링 중...', color:'var(--danger)', nodeGlow:null, duration:3000 },
+      { agent:'researcher', tag:'[Researcher]',     text:'수집 팩트 기반 본문 Chapter 3-4 집필. 14페이지 분량 모션 표현 기술 설계 가안 완성.',       desc:'Chapter 3-4 실시간 집필 중...',  color:'var(--accent2)', nodeGlow:'researcher', skillChips:['media','rag'], duration:4500 },
+      { agent:'supervisor', tag:'[Supervisor]',     text:'Draft 2단계 크리틱 수행: 모델 일관성 및 문체 통일 검수 완료. 최종 빌드 승인.',              desc:'최종 비평 및 다중 모델 정합성 검수 중...', color:'var(--danger)', nodeGlow:'supervisor', duration:4000 },
+      { agent:'warden',     tag:'[Registry Guard]', text:'checkpoints.sqlite 데이터베이스 인용 대조: 허위 인용(Hallucination) 레퍼런스 검출/제거 성공 (0.00%).', desc:'참조 문헌 팩트 검증 및 제거 필터 동작 중...', color:'var(--success)', nodeGlow:'guard', duration:3500 },
+      { agent:'finalizer',  tag:'[Finalizer]',      text:'UX_Capability_Map_Final.pdf (254 페이지) 컴파일 및 국문 정밀 가공 번역 패키징 생성 완료.', desc:'최종 PDF 리포트 빌드 및 국문 가공 중...', color:'var(--accent)', nodeGlow:'finalizer', skillChips:['translation'], duration:4000 },
+    ];
+
+    const terminalBody = document.getElementById('terminal-body-el');
+    let stepIndex = 0;
+    let pipelineInterval = null;
+    let progressTimer = null;
+    const allAgentKeys = ['supervisor','planner','planrefiner','researcher','deep','scientific','psychology','humanities','design','archivist','warden','finalizer'];
+
+    function executePipelineStep() {
+      allAgentKeys.forEach(k => {
+        const card = document.getElementById('card-' + k);
+        card.classList.remove('active-thinking');
+        card.querySelector('.agent-status-light').className = 'agent-status-light as-idle';
+        card.querySelector('.agent-telemetry-bar-fill').style.width = '0%';
+        card.querySelector('.agent-telemetry-desc').textContent = '대기 중';
+      });
+
+      // Reset all skill chips
+      document.querySelectorAll('.skill-chip').forEach(c => c.classList.remove('active-skill'));
+
+      nodeIds.forEach(nid => {
+        const node = document.getElementById('node-' + nid);
+        if (node) { node.style.borderColor = 'var(--border)'; node.style.boxShadow = 'none'; }
+        const line = document.getElementById(`line-${nid}`);
+        if (line) { line.setAttribute('stroke','url(#grad-line)'); line.setAttribute('stroke-width','2'); }
+      });
+
+      document.querySelectorAll('.tool-node').forEach(tNode => {
+        tNode.style.borderColor = 'var(--accent2)';
+        tNode.style.boxShadow = '0 0 10px rgba(6,182,212,0.15)';
+      });
+
+      toolLinks.forEach(link => {
+        const line = document.getElementById(`line-${link.from}-to-${link.to}`);
+        if (line) { line.setAttribute('stroke','url(#grad-tool)'); line.setAttribute('stroke-width','2'); }
+      });
+
+      const step = executionPipeline[stepIndex];
+      const activeCard = document.getElementById('card-' + step.agent);
+      if (activeCard) {
+        activeCard.classList.add('active-thinking');
+        activeCard.querySelector('.agent-status-light').className = 'agent-status-light as-thinking';
+        activeCard.querySelector('.agent-telemetry-desc').textContent = step.desc;
+        let elapsed = 0;
+        const bar = activeCard.querySelector('.agent-telemetry-bar-fill');
+        clearInterval(progressTimer);
+        progressTimer = setInterval(() => {
+          elapsed += 100;
+          bar.style.width = Math.min((elapsed / step.duration) * 100, 100) + '%';
+          if (elapsed >= step.duration) clearInterval(progressTimer);
+        }, 100);
+      }
+
+      if (step.nodeGlow) {
+        const graphNode = document.getElementById('node-' + step.nodeGlow);
+        if (graphNode) { graphNode.style.borderColor = 'var(--accent2)'; graphNode.style.boxShadow = '0 0 25px rgba(6,182,212,0.7)'; }
+        const line = document.getElementById(`line-${step.nodeGlow}`);
+        if (line) { line.setAttribute('stroke','url(#grad-active)'); line.setAttribute('stroke-width','4.5'); }
+      }
+
+      if (step.toolsGlow) {
+        step.toolsGlow.forEach(tId => {
+          const tNode = document.getElementById('node-' + tId);
+          if (tNode) { tNode.style.borderColor = 'var(--danger)'; tNode.style.boxShadow = '0 0 25px rgba(244,63,94,0.7)'; }
+          const tLink = toolLinks.find(l => l.to === tId);
+          if (tLink) {
+            const line = document.getElementById(`line-${tLink.from}-to-${tLink.to}`);
+            if (line) { line.setAttribute('stroke','url(#grad-active)'); line.setAttribute('stroke-width','4.5'); }
+          }
+        });
+      }
+
+      // Light up skill chips
+      if (step.skillChips) {
+        step.skillChips.forEach(s => {
+          const chip = document.querySelector(`.skill-chip[data-skill="${s}"]`);
+          if (chip) chip.classList.add('active-skill');
+        });
+      }
+
+      const now = new Date();
+      const logLine = document.createElement('div');
+      logLine.className = 'log-line';
+      logLine.innerHTML = `
+        <span class="log-time">[${now.toTimeString().split(' ')[0]}]</span>
+        <span class="log-tag" style="color:${step.color};">${step.tag}</span>
+        <span class="log-text">${step.text}</span>
+      `;
+      terminalBody.appendChild(logLine);
+      terminalBody.scrollTop = terminalBody.scrollHeight;
+
+      if (step.agent === 'finalizer') {
+        const r = document.getElementById('master-reports-counter');
+        r.textContent = parseInt(r.textContent) + 1;
+      }
+      if (step.agent === 'scientific') {
+        const n = document.getElementById('notes-counter');
+        n.textContent = parseInt(n.textContent) + 1;
+      }
+      if (Math.random() > 0.6) {
+        const l = document.getElementById('loop-counter');
+        l.textContent = parseInt(l.textContent) + 1;
+      }
+
+      stepIndex = (stepIndex + 1) % executionPipeline.length;
+      pipelineInterval = setTimeout(executePipelineStep, step.duration);
+    }
+
+    // ===== DASHBOARD CONTROLS =====
+    // Prompt input handler
+    function sendPrompt() {
+      const input = document.getElementById('prompt-input');
+      const text = input.value.trim();
+      if (!text) return;
+      const now = new Date();
+      const line = document.createElement('div');
+      line.className = 'log-line';
+      line.innerHTML = `
+        <span class="log-time">[${now.toTimeString().split(' ')[0]}]</span>
+        <span class="log-tag" style="color:var(--warn);">[USER]</span>
+        <span class="log-text" style="color:var(--warn);">${text}</span>
+      `;
+      terminalBody.appendChild(line);
+      terminalBody.scrollTop = terminalBody.scrollHeight;
+      input.value = '';
+    }
+    document.getElementById('btn-send-prompt').addEventListener('click', sendPrompt);
+    document.getElementById('prompt-input').addEventListener('keydown', e => {
+      if (e.key === 'Enter') sendPrompt();
+    });
+
+    document.getElementById('btn-pause').addEventListener('click', function() {
+      const span = this.querySelector('span:nth-child(2)');
+      if (span.textContent === '일시정지') {
+        span.textContent = '재개하기';
+        this.querySelector('span:nth-child(1)').textContent = '▶';
+        clearTimeout(pipelineInterval);
+        clearInterval(progressTimer);
+        const line = document.createElement('div');
+        line.className = 'log-line';
+        line.innerHTML = `<span class="log-time">[${new Date().toTimeString().split(' ')[0]}]</span><span class="log-tag" style="color:var(--danger);">[SYSTEM]</span><span class="log-text">자율 연구 데몬 루프가 사용자에 의해 일시 정지되었습니다.</span>`;
+        terminalBody.appendChild(line);
+        terminalBody.scrollTop = terminalBody.scrollHeight;
+      } else {
+        span.textContent = '일시정지';
+        this.querySelector('span:nth-child(1)').textContent = '⏸';
+        executePipelineStep();
+        const line = document.createElement('div');
+        line.className = 'log-line';
+        line.innerHTML = `<span class="log-time">[${new Date().toTimeString().split(' ')[0]}]</span><span class="log-tag" style="color:var(--success);">[SYSTEM]</span><span class="log-text">자율 연구 데몬 루프가 재개되었습니다.</span>`;
+        terminalBody.appendChild(line);
+        terminalBody.scrollTop = terminalBody.scrollHeight;
+      }
+    });
+
+    document.getElementById('btn-feedback').addEventListener('click', () => {
+      const feedback = prompt("에이전트에게 전송할 비평/피드백 피드를 입력하십시오:");
+      if (feedback) {
+        const line = document.createElement('div');
+        line.className = 'log-line';
+        line.innerHTML = `<span class="log-time">[${new Date().toTimeString().split(' ')[0]}]</span><span class="log-tag" style="color:var(--warn);">[USER CRITIQUE]</span><span class="log-text" style="color:var(--warn);">${feedback}</span>`;
+        terminalBody.appendChild(line);
+        terminalBody.scrollTop = terminalBody.scrollHeight;
+      }
+    });
+
+    document.getElementById('btn-download').addEventListener('click', () => {
+      alert("UX_Capability_Map_Final.pdf (254 페이지) 다운로드가 시작되었습니다.");
+    });
+  </script>
+</body>
+</html>

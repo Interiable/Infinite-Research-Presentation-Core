@@ -26,7 +26,7 @@ llm_pro = RobustGemini(
 
 # 2. Flash Model: For repetitive tasks or simple routing
 llm_flash = ChatGoogleGenerativeAI(
-    model="gemini-3-flash-preview", 
+    model=os.getenv("GEMINI_FLASH_MODEL", "gemini-2.5-flash"), 
     temperature=0.0, 
     google_api_key=os.getenv("GOOGLE_API_KEY"),
     timeout=120,
@@ -943,7 +943,7 @@ Answer ONLY 'A' or 'B' with a one-line reason."""
               try:
                 from langchain_ollama import ChatOllama
                 local_guard = ChatOllama(
-                    model="gemma4:31b",
+                    model=os.getenv("LOCAL_LLM_MODEL", "qwen3:32b"),
                     base_url=os.getenv("OLLAMA_BASE_URL", "http://localhost:11434"),
                     temperature=0.0,
                     timeout=120

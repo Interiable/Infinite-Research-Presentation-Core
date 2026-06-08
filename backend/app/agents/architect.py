@@ -9,7 +9,7 @@ from app.utils import RobustGemini, log_night_audit
 
 # --- CONFIGURATION ---
 llm_flash = ChatGoogleGenerativeAI(
-    model="gemini-3-flash-preview", 
+    model=os.getenv("GEMINI_FLASH_MODEL", "gemini-2.5-flash"), 
     temperature=0.0, 
     google_api_key=os.getenv("GOOGLE_API_KEY"),
     timeout=120,

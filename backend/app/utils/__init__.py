@@ -116,37 +116,40 @@ class RobustGemini:
     3. OpenAI GPT-5.2 (2nd Backup - High Quality Fallback)
     4. Gemini Flash (Ultimate Fallback)
     """
-    def __init__(self, pro_model_name="gemini-3.1-pro-preview", flash_model_name="gemini-3-flash-preview", temperature=0.0):
-        self.pro_model_name = pro_model_name
-        self.flash_model_name = flash_model_name
+    def __init__(self, pro_model_name=None, flash_model_name=None, temperature=0.0):
+        # Read model names from env vars (set in .env), fall back to sensible defaults
+        self.pro_model_name   = pro_model_name   or os.getenv("GEMINI_PRO_MODEL",         "gemini-2.5-pro")
+        self.flash_model_name = flash_model_name or os.getenv("GEMINI_FLASH_MODEL",       "gemini-2.5-flash")
+        self.pro_backup_name  =                     os.getenv("GEMINI_PRO_BACKUP_MODEL",  "gemini-2.5-pro-preview-06-05")
+        self.openai_model     =                     os.getenv("OPENAI_MODEL",             "gpt-4o")
         self.temperature = temperature
         self.google_api_key = os.getenv("GOOGLE_API_KEY")
         self.openai_api_key = os.getenv("OPENAI_API_KEY")
-        
-        # 1. Primary: Gemini 3.1 Pro
+
+        # 1. Primary: Gemini Pro
         self.llm_pro = ChatGoogleGenerativeAI(
-            model=pro_model_name, 
-            temperature=temperature, 
+            model=self.pro_model_name,
+            temperature=temperature,
             google_api_key=self.google_api_key,
             timeout=300,
             max_retries=2
         )
-        
-        # 2. 1st Backup: Gemini 3 Pro (Same class)
+
+        # 2. 1st Backup: Gemini Pro (alternate quota/version)
         self.llm_pro_backup = ChatGoogleGenerativeAI(
-            model="gemini-3-pro-preview", 
-            temperature=temperature, 
+            model=self.pro_backup_name,
+            temperature=temperature,
             google_api_key=self.google_api_key,
             timeout=300,
             max_retries=2
         )
-        
-        # 3. 2nd Backup: OpenAI GPT-5.2
+
+        # 3. 2nd Backup: OpenAI (if key provided)
         self.llm_openai = None
         if self.openai_api_key:
             try:
                 self.llm_openai = ChatOpenAI(
-                    model="gpt-5.2",
+                    model=self.openai_model,
                     temperature=temperature,
                     api_key=self.openai_api_key,
                     timeout=300,
@@ -154,11 +157,11 @@ class RobustGemini:
                 )
             except Exception as e:
                 print(f"⚠️ OpenAI Init Failed: {e}")
-        
+
         # 4. Ultimate Backup: Gemini Flash
         self.llm_flash = ChatGoogleGenerativeAI(
-            model=flash_model_name, 
-            temperature=temperature, 
+            model=self.flash_model_name,
+            temperature=temperature,
             google_api_key=self.google_api_key,
             timeout=300,
             max_retries=2
@@ -334,20 +337,24 @@ def convert_to_pdf(markdown_path: str, output_pdf_path: str = None):
 <head>
 <meta charset="utf-8">
 <style>
-body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; padding: 40px; font-size: 14px; line-height: 1.6; color: #333; }}
-h1 {{ color: #1a1a1a; border-bottom: 2px solid #eaecef; padding-bottom: 0.3em; margin-bottom: 16px; margin-top: 24px; }}
-h2 {{ color: #2a2a2a; border-bottom: 1px solid #eaecef; padding-bottom: 0.3em; margin-top: 24px; margin-bottom: 16px; }}
-h3 {{ color: #444; margin-top: 24px; margin-bottom: 16px; }}
-pre {{ background-color: #f6f8fa; padding: 16px; border-radius: 6px; overflow: auto; white-space: pre-wrap; word-wrap: break-word; }}
-code {{ font-family: ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, Liberation Mono, monospace; background-color: rgba(175, 184, 193, 0.2); padding: 0.2em 0.4em; border-radius: 6px; font-size: 85%; white-space: pre-wrap; word-wrap: break-word; }}
-pre code {{ background-color: transparent; padding: 0; white-space: pre-wrap; word-wrap: break-word; }}
-table {{ border-collapse: collapse; width: 100%; margin-top: 15px; margin-bottom: 15px; table-layout: fixed; word-wrap: break-word; font-size: 11px; }}
-th, td {{ border: 1px solid #d0d7de; padding: 6px; word-break: keep-all; word-wrap: break-word; overflow-wrap: break-word; }}
-th {{ background-color: #f6f8fa; font-weight: 600; }}
-tr:nth-child(2n) {{ background-color: #f6f8fa; }}
-blockquote {{ padding: 0 1em; color: #656d76; border-left: .25em solid #d0d7de; }}
-.math-display {{ text-align: center; margin: 1em 0; padding: 12px; background: #f8f9fa; border-radius: 6px; font-family: 'Cambria Math', 'Latin Modern Math', Georgia, serif; font-size: 16px; font-style: italic; color: #1a1a1a; }}
-.math-inline {{ font-family: 'Cambria Math', 'Latin Modern Math', Georgia, serif; font-style: italic; color: #1a1a1a; font-size: 105%; }}
+* {{ background-color: transparent !important; }}
+body {{ font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; padding: 40px; font-size: 14px; line-height: 1.7; color: #222222; background-color: #ffffff !important; }}
+h1 {{ color: #111111; border-bottom: 2px solid #cccccc; padding-bottom: 0.3em; margin-bottom: 16px; margin-top: 32px; }}
+h2 {{ color: #1a1a1a; border-bottom: 1px solid #dddddd; padding-bottom: 0.3em; margin-top: 28px; margin-bottom: 16px; }}
+h3 {{ color: #333333; margin-top: 24px; margin-bottom: 12px; }}
+h4, h5, h6 {{ color: #444444; }}
+p, li {{ color: #222222; }}
+pre {{ background-color: #f7f7f7 !important; padding: 16px; border-radius: 6px; border: 1px solid #e0e0e0; overflow: auto; white-space: pre-wrap; word-wrap: break-word; }}
+code {{ font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace; background-color: #f0f0f0 !important; color: #333333; padding: 0.15em 0.35em; border-radius: 4px; font-size: 85%; white-space: pre-wrap; word-wrap: break-word; }}
+pre code {{ background-color: transparent !important; padding: 0; white-space: pre-wrap; word-wrap: break-word; }}
+table {{ border-collapse: collapse; width: 100%; margin-top: 15px; margin-bottom: 15px; table-layout: fixed; word-wrap: break-word; font-size: 11px; background-color: #ffffff !important; }}
+th, td {{ border: 1px solid #cccccc; padding: 8px; word-break: keep-all; word-wrap: break-word; overflow-wrap: break-word; color: #222222; background-color: #ffffff !important; }}
+th {{ background-color: #f5f5f5 !important; font-weight: 600; color: #111111; }}
+tr:nth-child(2n) {{ background-color: #fafafa !important; }}
+blockquote {{ padding: 0 1em; color: #555555; border-left: .25em solid #cccccc; background-color: transparent !important; }}
+strong {{ color: #111111; }}
+.math-display {{ text-align: center; margin: 1em 0; padding: 12px; background-color: #f8f8f8 !important; border-radius: 6px; border: 1px solid #e8e8e8; font-family: 'Cambria Math', 'Latin Modern Math', Georgia, serif; font-size: 16px; font-style: italic; color: #111111; }}
+.math-inline {{ font-family: 'Cambria Math', 'Latin Modern Math', Georgia, serif; font-style: italic; color: #111111; font-size: 105%; }}
 </style>
 </head>
 <body>

@@ -79,27 +79,125 @@ Example for "DMP trajectory optimization": ["dynamic movement primitives", "ProD
             print(f"⚠️ Keyword extraction failed: {e}")
             return [topic[:100]]
 
-    def search_arxiv(self, query: str, max_results: int = 5) -> list:
-        """Searches ArXiv for papers with rate limiting."""
+    # Class-level ArXiv client for connection reuse & internal rate-limit state
+    _arxiv_client = None
+    _arxiv_blocked = False  # Track if ArXiv API is currently blocked
+
+    @classmethod
+    def _get_arxiv_client(cls):
+        if cls._arxiv_client is None:
+            cls._arxiv_client = arxiv.Client(
+                page_size=10,
+                delay_seconds=5.0,  # ArXiv official recommendation: ≥3s
+                num_retries=2
+            )
+        return cls._arxiv_client
+
+    def _get_s2_headers(self):
+        """Get Semantic Scholar API headers. Uses S2_API_KEY if available for higher rate limits (100 RPM vs 1 RPM)."""
+        headers = {}
+        api_key = os.environ.get('S2_API_KEY', '')
+        if api_key:
+            headers['x-api-key'] = api_key
+        return headers
+
+    def _search_arxiv_via_semantic_scholar(self, query: str, max_results: int = 5) -> list:
+        """Fallback: Search for ArXiv papers through Semantic Scholar API with retry."""
         import time
         import random
-        print(f"📚 Searching ArXiv for: {query}")
+        
+        print(f"   🔄 ArXiv Fallback: Searching via Semantic Scholar for ArXiv papers...")
+        
+        url = "https://api.semanticscholar.org/graph/v1/paper/search"
+        params = {
+            "query": query,
+            "limit": max_results,
+            "fields": "title,authors,year,abstract,openAccessPdf,externalIds",
+            "venue": "arxiv"  # Filter to ArXiv papers only
+        }
+        headers = self._get_s2_headers()
         
         max_retries = 3
+        base_backoff = 15
+        
         for attempt in range(max_retries):
             try:
-                # ArXiv recommends 3s between requests. 
-                # Adding 3s + random jitter to be safe.
-                wait_time = 3.5 + random.uniform(0.5, 1.5)
-                if attempt > 0:
-                    wait_time *= (2 ** attempt) # Exponential backoff on retry
+                if attempt == 0:
+                    time.sleep(8.0 + random.uniform(2.0, 5.0))
+                else:
+                    wait_time = base_backoff * (2 ** attempt) + random.uniform(5.0, 10.0)
+                    print(f"   ⏳ ArXiv Fallback backoff: waiting {wait_time:.1f}s before retry {attempt+1}...")
+                    time.sleep(wait_time)
+                
+                response = requests.get(url, params=params, headers=headers, timeout=15)
+                if response.status_code == 200:
+                    data = response.json()
+                    results = []
+                    for paper in data.get('data', []):
+                        pdf_url = None
+                        if paper.get('openAccessPdf'):
+                            pdf_url = paper['openAccessPdf'].get('url')
+                        
+                        # Try to get ArXiv PDF URL from externalIds
+                        arxiv_id = None
+                        ext_ids = paper.get('externalIds', {})
+                        if ext_ids and ext_ids.get('ArXiv'):
+                            arxiv_id = ext_ids['ArXiv']
+                            if not pdf_url:
+                                pdf_url = f"https://arxiv.org/pdf/{arxiv_id}.pdf"
+                        
+                        results.append({
+                            "title": paper.get('title'),
+                            "authors": [a['name'] for a in paper.get('authors', [])],
+                            "summary": paper.get('abstract') or "No abstract available.",
+                            "pdf_url": pdf_url,
+                            "published": str(paper.get('year')),
+                            "source": "ArXiv (via Semantic Scholar)"
+                        })
+                    print(f"   ✅ ArXiv Fallback: Found {len(results)} papers via Semantic Scholar.")
+                    return results
+                elif response.status_code in (429, 503):
+                    print(f"   ⚠️ ArXiv Fallback: HTTP {response.status_code}. Attempt {attempt+1}/{max_retries}.")
+                    continue
+                else:
+                    print(f"   ⚠️ ArXiv Fallback also failed: HTTP {response.status_code}")
+                    return []
+            except Exception as e:
+                print(f"   ⚠️ ArXiv Fallback attempt {attempt+1} failed: {e}")
+                if attempt == max_retries - 1: return []
+        
+        return []
+
+    def search_arxiv(self, query: str, max_results: int = 5) -> list:
+        """Searches ArXiv for papers. Falls back to Semantic Scholar if ArXiv API is blocked."""
+        import time
+        import random
+        
+        # Cap max_results to avoid huge responses that trigger 503
+        max_results = min(max_results, 10)
+        print(f"📚 Searching ArXiv for: {query} (max_results={max_results})")
+        
+        # If ArXiv was previously blocked in this session, skip entirely
+        if AcademicResearcher._arxiv_blocked:
+            print("   ⚡ ArXiv API known blocked — skipping. (Semantic Scholar also disabled)")
+            return []
+        
+        max_retries = 2
+        base_backoff = 8
+        
+        for attempt in range(max_retries):
+            try:
+                # Pre-request delay
+                if attempt == 0:
+                    wait_time = 5.0 + random.uniform(1.0, 3.0)
+                else:
+                    wait_time = base_backoff * (2 ** attempt) + random.uniform(2.0, 5.0)
+                    print(f"   ⏳ ArXiv backoff: waiting {wait_time:.1f}s before retry {attempt+1}...")
                 
                 time.sleep(wait_time)
                 
-                # Construct client
-                client = arxiv.Client()
+                client = self._get_arxiv_client()
                 
-                # Construct search query
                 search = arxiv.Search(
                     query=query,
                     max_results=max_results,
@@ -120,19 +218,25 @@ Example for "DMP trajectory optimization": ["dynamic movement primitives", "ProD
                 return results
             except Exception as e:
                 error_msg = str(e)
-                if "429" in error_msg or "Rate Limit" in error_msg:
-                    print(f"⚠️ ArXiv Rate Limited (429). Retry {attempt+1}/{max_retries}...")
+                if "429" in error_msg or "503" in error_msg or "Rate Limit" in error_msg or "timed out" in error_msg.lower():
+                    print(f"⚠️ ArXiv API blocked ({error_msg[:80]}). Attempt {attempt+1}/{max_retries}.")
+                    if attempt == max_retries - 1:
+                        AcademicResearcher._arxiv_blocked = True
+                        print("🚫 ArXiv API blocked for this session. Skipping academic search.")
+                        return []
                     continue
                 print(f"⚠️ ArXiv search failed: {e}")
-                if attempt == max_retries - 1: return []
+                return []
                 
         return []
 
     def search_semantic_scholar(self, query: str, max_results: int = 5) -> list:
-        """Searches Semantic Scholar for papers with stricter Rate Limit handling."""
+        """Searches Semantic Scholar for papers with robust Rate Limit handling."""
         import time
         import random
-        print(f"📚 Searching Semantic Scholar for: {query}")
+        
+        max_results = min(max_results, 10)
+        print(f"📚 Searching Semantic Scholar for: {query} (max_results={max_results})")
         
         url = f"https://api.semanticscholar.org/graph/v1/paper/search"
         params = {
@@ -141,16 +245,21 @@ Example for "DMP trajectory optimization": ["dynamic movement primitives", "ProD
             "fields": "title,authors,year,abstract,openAccessPdf"
         }
 
-        max_retries = 3
-        # Increase base retry delay
-        retry_delay = 5 
+        max_retries = 2  # Fail fast — ArXiv is the primary academic source
+        base_backoff = 8
         
         for attempt in range(max_retries):
             try:
-                # Add Throttling: Stricter delay (2.5s + jitter) to avoid 1 RPS trigger
-                time.sleep(2.5 + random.uniform(0.5, 1.5)) 
+                # Pre-request delay: 5s + jitter to stay well under 1 RPS
+                if attempt == 0:
+                    time.sleep(5.0 + random.uniform(1.0, 3.0))
+                else:
+                    wait_time = base_backoff * (2 ** attempt) + random.uniform(3.0, 6.0)
+                    print(f"   ⏳ Semantic Scholar backoff: waiting {wait_time:.1f}s before retry {attempt+1}...")
+                    time.sleep(wait_time)
                 
-                response = requests.get(url, params=params, timeout=10)
+                headers = self._get_s2_headers()
+                response = requests.get(url, params=params, headers=headers, timeout=15)
                 
                 if response.status_code == 200:
                     data = response.json()
@@ -171,10 +280,10 @@ Example for "DMP trajectory optimization": ["dynamic movement primitives", "ProD
                     print(f"✅ Semantic Scholar found {len(results)} papers.")
                     return results
                 
-                elif response.status_code == 429:
-                    wait_time = retry_delay * (2 ** attempt) + random.uniform(1, 3)
-                    print(f"⚠️ Semantic Scholar Rate Limited (429). Retrying in {wait_time:.1f}s... (Attempt {attempt+1}/{max_retries})")
-                    time.sleep(wait_time)
+                elif response.status_code in (429, 503):
+                    retry_wait = base_backoff * (2 ** (attempt + 1)) + random.uniform(3.0, 8.0)
+                    print(f"⚠️ Semantic Scholar {response.status_code}. Retrying in {retry_wait:.1f}s... (Attempt {attempt+1}/{max_retries})")
+                    time.sleep(retry_wait)
                 else:
                     print(f"⚠️ Semantic Scholar API Error: {response.status_code}")
                     return []

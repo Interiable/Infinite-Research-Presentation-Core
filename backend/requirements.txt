@@ -1,21 +1,63 @@
+# ============================================================
+# LangAIAgent — Python Dependencies
+# Tested: Python 3.11+ / Ubuntu 24.04
+# Install: pip install -r requirements.txt
+# After install: playwright install chromium
+# ============================================================
+
+# --- Web Framework ---
 fastapi>=0.115.0
-uvicorn>=0.32.0
-langchain>=0.3.1
+uvicorn[standard]>=0.32.0
+aiofiles>=23.0.0
+
+# --- LangChain Core ---
+langchain>=0.3.0
+langchain-core>=0.3.0
+langchain-community>=0.3.0
+langchain-text-splitters>=0.3.0
+
+# --- LangGraph (Workflow Orchestration) ---
 langgraph>=0.2.34
-langchain-google-genai>=2.0.0
-langchain-ollama>=0.2.0
-python-dotenv>=1.0.1
-pydantic>=2.9.2
-websockets>=13.1
-black
-isort
-chromadb>=0.4.0
-pypdf>=4.0.0
-tiktoken>=0.7.0
-langchain-chroma>=0.1.0
-langchain-text-splitters>=0.2.0
-langchain-community>=0.2.0
 langgraph-checkpoint-sqlite>=1.0.0
-langchain-openai>=0.1.0
-pypdf>=4.0.0
-pdfminer.six>=20260107
+
+# --- LLM Providers ---
+langchain-google-genai>=2.0.0       # Google Gemini (primary)
+langchain-openai>=0.2.0             # OpenAI (fallback)
+langchain-ollama>=0.2.0             # Local models via Ollama
+
+# --- Web Search ---
+langchain-tavily>=0.1.0
+
+# --- Vector DB / RAG ---
+chromadb>=0.6.0
+langchain-chroma>=0.1.4
+
+# --- PDF Generation ---
+playwright>=1.48.0                  # HTML→PDF via Chromium
+markdown-pdf>=1.5                   # MD→PDF utility
+# After pip install: run `playwright install chromium`
+
+# --- PDF Reading / Parsing ---
+pypdf>=4.3.0
+pdfminer.six>=20231228
+pymupdf4llm>=0.0.17
+
+# --- Token Counting ---
+tiktoken>=0.7.0
+
+# --- Google Cloud (Patent BigQuery) ---
+google-cloud-bigquery>=3.25.0
+google-auth>=2.35.0
+
+# --- Academic / Media Research ---
+arxiv>=2.1.0
+youtube-search-python>=1.6.6
+youtube-transcript-api>=0.6.3
+duckduckgo-search>=3.9.0
+
+# --- Utilities ---
+python-dotenv>=1.0.1
+pydantic>=2.9.0
+pydantic-settings>=2.0.0
+websockets>=13.1
+requests>=2.32.0

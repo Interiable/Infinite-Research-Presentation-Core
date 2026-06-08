@@ -437,11 +437,16 @@ Respond with ONLY one word: LOW, MEDIUM, or HIGH"""
                     keywords = academic.extract_keywords(optimized_query, original_goal=original_goal)
                     print(f"   🔑 Extracted Keywords: {keywords}")
                     
-                    # 2. Search ArXiv & Semantic Scholar (v13.0: dynamic count)
+                    # 2. Search ArXiv (Semantic Scholar disabled — persistent 429 rate limit)
                     paper_results = []
-                    for kw in keywords[:3]: # Search top 3 keywords
+                    for kw_idx, kw in enumerate(keywords[:3]): # Search top 3 keywords
+                        if kw_idx > 0:
+                            # Inter-keyword delay to avoid rate limiting across APIs
+                            import time as _time
+                            _time.sleep(10)
+                            print(f"   ⏳ Academic search: inter-keyword delay before keyword {kw_idx+1}...")
                         paper_results.extend(academic.search_arxiv(kw, max_results=base_academic_results))
-                        paper_results.extend(academic.search_semantic_scholar(kw, max_results=base_academic_results))
+                        # paper_results.extend(academic.search_semantic_scholar(kw, max_results=base_academic_results))  # DISABLED: S2 persistent 429
                     
                     # Remove duplicates based on title
                     unique_papers = {p['title']: p for p in paper_results}.values()

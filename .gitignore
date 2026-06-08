@@ -1,31 +1,76 @@
-# Python
+# ============================================================
+# LangAIAgent — .gitignore
+# ============================================================
+
+# --- Python ---
 __pycache__/
 *.py[cod]
 *$py.class
-venv/
-.env
-.venv
+*.pyo
+.pytest_cache/
 
-# Node
+# --- Virtual Environments ---
+venv/
+.venv/
+env/
+
+# --- Secrets (NEVER commit) ---
+.env
+backend/.env
+*.json.key
+mylangsearchagent-*.json
+*service_account*.json
+*credentials*.json
+gcp_key*.json
+
+# --- Node ---
 node_modules/
 dist/
 build/
 .DS_Store
 
-# Logs
-workspace/logs
+# --- Logs ---
 *.log
+backend/artifacts/night_audit_log.md
 
-# Workspace Output (optional, usually we want to keep source but maybe not generated binaries)
-# workspace/output
-
-# Backend Data (Persistence)
+# --- Backend Runtime Data (machine-specific) ---
 backend/data/
+backend/data/projects/
 *.sqlite
 *.sqlite-shm
 *.sqlite-wal
 
-# Generated Artifacts
+# --- Generated Research Output ---
 backend/artifacts/
+backend/results/
+backend/dialogue_history/
 
-mylangsearchagent-*.json
+# --- Large Video / Media Files ---
+*.webm
+*.mp4
+*.mkv
+*.avi
+
+# --- Large Model Files ---
+*.gguf
+*.bin
+*.safetensors
+models/
+
+# --- llama.cpp build artifacts ---
+llama.cpp/build/
+llama.cpp/models/
+
+# --- IDE ---
+.idea/
+.vscode/settings.json
+*.swp
+*.swo
+
+# --- OS ---
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# --- Playwright browser cache ---
+backend/venv/lib/python*/site-packages/playwright/driver/
