@@ -654,7 +654,7 @@ def _make_conversational(sender: str, raw_text: str, next_agent: str, data: dict
     # --- DEEP RESEARCHER ---
     if s == "deepresearcher" or "deep" in s:
         if "academic" in text.lower() or "paper" in text.lower() or "arxiv" in text.lower():
-            return "학술 논문 검색을 완료했습니다. ArXiv와 Semantic Scholar에서 관련 논문들을 분석해서 팀에 전달합니다. 🔬"
+            return "학술 논문 검색을 완료했습니다. ArXiv에서 관련 논문들을 분석해서 팀에 전달합니다. 🔬"
         if "patent" in text.lower():
             return "특허 검색을 완료했습니다. 관련 특허와 선행기술을 분석해서 보고서에 반영합니다. 📋"
         if "web" in text.lower() or "tavily" in text.lower() or "search" in text.lower():
