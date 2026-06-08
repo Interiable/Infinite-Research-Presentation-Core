@@ -35,7 +35,8 @@ langchain-chroma>=0.1.4
 # --- PDF Generation ---
 playwright>=1.48.0                  # HTML→PDF via Chromium
 markdown-pdf>=1.5                   # MD→PDF utility
-# After pip install: run `playwright install chromium`
+nest-asyncio>=1.6.0                 # Required: Playwright in async FastAPI context
+# After pip install: run `python3 -m playwright install chromium`
 
 # --- PDF Reading / Parsing ---
 pypdf>=4.3.0

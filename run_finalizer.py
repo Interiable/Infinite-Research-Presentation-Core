@@ -324,7 +324,7 @@ print(f"\n🌐 Starting Korean Translation...")
 try:
     from langchain_ollama import ChatOllama
     local_translator = ChatOllama(
-        model="qwen3-32k:30b-a3b",
+        model=os.getenv("LOCAL_LLM_MODEL", "qwen3-32k:30b-a3b"),
         base_url=os.getenv("OLLAMA_BASE_URL", "http://localhost:11434"),
         temperature=0.0,
         timeout=300

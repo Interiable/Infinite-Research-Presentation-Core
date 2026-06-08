@@ -333,7 +333,7 @@ Example for "DMP trajectory optimization": ["dynamic movement primitives", "ProD
         """v5.1: Unload the LLM from GPU to free VRAM for Marker."""
         import subprocess
         try:
-            model_name = os.getenv("LOCAL_LLM_MODEL", "gemma4:31b")
+            model_name = os.getenv("LOCAL_LLM_MODEL", "qwen3-32k:30b-a3b")
             print(f"🔄 GPU Swap: Unloading LLM ({model_name}) from GPU...")
             result = subprocess.run(
                 ["ollama", "stop", model_name],
@@ -354,7 +354,7 @@ Example for "DMP trajectory optimization": ["dynamic movement primitives", "ProD
         import subprocess
         import time
         try:
-            model_name = os.getenv("LOCAL_LLM_MODEL", "gemma4:31b")
+            model_name = os.getenv("LOCAL_LLM_MODEL", "qwen3-32k:30b-a3b")
             print(f"🔄 GPU Swap: Re-loading LLM ({model_name}) onto GPU...")
             # Send a minimal prompt to force Ollama to load the model
             result = subprocess.run(
