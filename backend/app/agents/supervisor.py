@@ -336,9 +336,11 @@ def supervisor_node(state: AgentState, config: RunnableConfig):
                     "messages": [SystemMessage(content=f"Routing directly to FINALIZER for Step {current_index+1}")]
                 }
             
-            # --- v3.7 FAST PATH: Skip sub-plan for simple tasks ---
-            elif len(plan) <= 2:
-                print(f"⚡ Fast Path: Simple task ({len(plan)} steps) - Skipping PLAN_REFINER & WARDEN")
+            # --- v3.7 FAST PATH: Only skip sub-plan when plan is truly trivial (1 step) ---
+            # NOTE: Minimum plan is always 2 steps (Research + Finalizer).
+            # len(plan) <= 1 means an edge-case single-step plan — always route to Plan Refiner otherwise.
+            elif len(plan) <= 1:
+                print(f"⚡ Fast Path: Trivial single-step task - Skipping PLAN_REFINER & WARDEN")
                 return {
                     "next": assigned_to,
                     "sender": "Supervisor",
