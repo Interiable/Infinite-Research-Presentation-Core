@@ -431,7 +431,7 @@ Respond with ONLY one word: LOW, MEDIUM, or HIGH"""
             if use_academic:
                 try:
                     print("🎓 Activating Academic Research Protocol...")
-                    academic = AcademicResearcher()
+                    academic = AcademicResearcher(project_id=project_id)
                     
                     # 1. Keyword Extraction (v13.0: domain-aware, with full context)
                     keywords = academic.extract_keywords(optimized_query, original_goal=original_goal)

@@ -6,18 +6,23 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from app.agents.local_model import local_llm
 
 class AcademicResearcher:
-    def __init__(self, output_dir=None):
+    def __init__(self, output_dir=None, project_id=None):
         # Use Absolute Path to prevent Errno 2
         import os
         base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
         self.output_dir = output_dir or os.path.join(base_dir, "data", "papers")
+        self.project_id = project_id or 'default'
         os.makedirs(self.output_dir, exist_ok=True)
-        
-        # v4.5: Initialize Local Paper Library
+
+        # v4.5: Initialize Local Paper Library — use project_id so papers index
+        # into the correct project's ChromaDB (not always 'default').
         try:
             from app.core.rag import PaperLibrary
-            self.paper_library = PaperLibrary(papers_dir=self.output_dir)
-            print("📚 Paper Library initialized.")
+            self.paper_library = PaperLibrary(
+                papers_dir=self.output_dir,
+                project_id=self.project_id
+            )
+            print(f"📚 Paper Library initialized (project: {self.project_id}).")
         except Exception as e:
             print(f"⚠️ Paper Library init failed: {e}")
             self.paper_library = None
