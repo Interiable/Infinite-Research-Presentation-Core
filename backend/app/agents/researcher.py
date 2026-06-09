@@ -1604,10 +1604,28 @@ Be focused and dense. Avoid padding or unnecessary repetition.
 - **🚫🚫🚫 NO INTERNAL CITE TAGS (ZERO TOLERANCE) 🚫🚫🚫**: NEVER include `[Pre-Digested Facts]`, `[Scientific Notes]`, or `[GEMMA4]`, `[DEEPSEEK-R1]` in your output. Use [REF-XXX] tags from the registry.
 - **🚫🚫🚫 NO FREE-FORM CITATIONS (ZERO TOLERANCE) 🚫🚫🚫**: NEVER write `[File: ...]`, `[Web: ...]`, `[Paper: ...]`, or `[Patent: ...]`. ALL of these formats are BANNED. Use ONLY `[REF-XXX]` IDs from the VERIFIED REFERENCE REGISTRY above. Any free-form citation will be AUTOMATICALLY STRIPPED.
 
-**⚠️ MANDATORY CITATION RULES (YOUR SUBMISSION WILL BE REJECTED WITHOUT THESE):**
-1. **INLINE CITATIONS**: Every factual claim, data point, metric, or formula MUST have an inline citation using `[REF-XXX]` format.
-   Example: "The ProDMP achieves 4659x speedup via closed-form basis functions [REF-003]."
-   Example: "The system uses ROS2 DDS for middleware [REF-001] [REF-012]."
+**⚠️ CITATION RULES — PRECISION OVER VOLUME:**
+1. **INLINE CITATIONS — CITE ONLY WHEN SPECIFIC:**
+   Cite `[REF-XXX]` ONLY when the specific data point, experiment result, hardware spec,
+   measured metric, or named finding comes DIRECTLY from that registry source.
+
+   ✅ CITE for: specific numbers, hardware specs, experiment results, named algorithms from a paper.
+      Example: "The Clearpath Jackal achieves max 2.0 m/s [REF-001]."
+      Example: "Gaze detection achieved F1=91-96% across 23,317 frames [REF-002]."
+
+   🚫 DO NOT CITE for:
+      - General domain knowledge (e.g., "robots use sensors to navigate")
+      - Your own analytical conclusions drawn across multiple sources
+      - Future predictions / 2035 extrapolations that are YOUR analysis, not the paper's claim
+      - Common engineering concepts (SLAM, neural networks, etc.) unless citing a SPECIFIC paper's implementation
+
+   If you are unsure which source a claim comes from → leave it UNCITED rather than
+   attaching a random REF. Precision matters more than citation count.
+
+   ⚠️ DO NOT cite the same REF more than ~20 times per chapter.
+      If you find yourself citing one source repeatedly, you are likely over-attributing.
+      Spread citations across the full registry.
+
 2. **REFERENCES SECTION**: At the very end of your chapter, you MUST include:
    ```
    ## References
@@ -1616,7 +1634,7 @@ Be focused and dense. Avoid padding or unnecessary repetition.
    [REF-012] WEB: Web Page Title — Relevant data used
    ```
    List ONLY the [REF-XXX] entries you actually cited in the text.
-   If you omit inline citations or the References section, your work WILL BE REJECTED.
+   If you omit the References section, your work WILL BE REJECTED.
 
 **ACTION:**
 Write the full technical specification for "{title}" based on the sources above.
@@ -1825,7 +1843,7 @@ This draft is a TARGETED REVISION of a previously rejected chapter. The writer h
         # If a sentence's keywords don't appear in the source content → strip that citation.
         try:
             from collections import Counter
-            ANOMALY_THRESHOLD = 15   # citations per chapter before we investigate
+            ANOMALY_THRESHOLD = 10   # citations per chapter before we investigate
             MISMATCH_RATIO    = 0.5  # strip REF from a sentence if <50% keyword overlap
             STOP_WORDS = {
                 'the','and','for','are','this','that','with','from','was','its','have',
