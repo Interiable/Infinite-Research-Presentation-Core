@@ -541,23 +541,31 @@ Respond with ONLY one word: LOW, MEDIUM, or HIGH"""
                             print(f"  💾 Using cached Tavily results ({len(sq_results)} items) for query: {search_query[:30]}...")
                         else:
                             sq_results = search.invoke(search_query)
-                        
+
+                            # langchain-tavily TavilySearch returns a dict: {'results': [...]}
+                            # TavilySearchResults (old) returned a list directly.
+                            # Normalise to list regardless of format.
+                            if isinstance(sq_results, dict):
+                                sq_results = sq_results.get('results', [])
+
                             # Handle error responses
                             if isinstance(sq_results, str):
                                 if 'Error' in sq_results or 'error' in sq_results:
                                     print(f"  ❌ Tavily API Error: {sq_results[:200]}")
-                                    sq_results = []  # Skip web search
+                                    sq_results = []
                                 else:
                                     try:
                                         sq_results = json.loads(sq_results)
+                                        if isinstance(sq_results, dict):
+                                            sq_results = sq_results.get('results', [])
                                     except json.JSONDecodeError:
                                         print(f"  ⚠️ Unexpected string result, skipping web search")
                                         sq_results = []
-                            
+
                         # v6.3: Save to cache (only valid results — snippets only for cache)
                             if sq_results and isinstance(sq_results, list):
                                 _save_cache(search_query, sq_results, project_id)
-                        
+
                         if sq_results and isinstance(sq_results, list):
                             all_results.extend(sq_results)
                     
