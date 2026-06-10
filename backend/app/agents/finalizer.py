@@ -109,12 +109,15 @@ def standardize_citations(text: str, registry: list = None) -> tuple:
 
     text = re.sub(legacy_ref_pattern, legacy_replacer, text, flags=re.IGNORECASE)
     
-    # --- Phase 3: Clean up old References section ---
-    ref_match = re.search(r'\n##\s*References?', text, re.IGNORECASE)
-    if ref_match:
-        text_clean = text[:ref_match.start()].strip()
-    else:
-        text_clean = text.strip()
+    # --- Phase 3: Remove ALL per-chapter References sections (any heading level) ---
+    # A References block runs from its heading until the next heading or end of doc.
+    # This is multi-chapter safe (does NOT truncate at the first occurrence).
+    text_clean = re.sub(
+        r'\n#{1,6}\s*References?\s*\n.*?(?=\n#{1,6}\s|\Z)',
+        '\n',
+        text,
+        flags=re.IGNORECASE | re.DOTALL
+    ).strip()
     
     # --- Phase 4: Build clean References section ---
     if not unique_citations:
@@ -470,6 +473,20 @@ def finalizer_node(state: AgentState, config: RunnableConfig):
                     print(f"🛡️ Finalizer URL Guard: Stripped {stripped_count} unverified link(s) from final deliverable.")
 
             master_report_en = f"# 🎯 Primary Deliverable\n\n{extracted_deliverable_en}\n\n---\n\n# 📚 Full Research Appendix\n\n{content_body}"
+
+            # v13.1: Standardize citations — convert internal [REF-XXX] tags to clean
+            # academic [1], [2] format and build ONE unified References bibliography
+            # from the verified reference registry.
+            try:
+                registry = state.get('verified_reference_registry', [])
+                body_clean, refs_section = standardize_citations(master_report_en, registry=registry)
+                if refs_section:
+                    master_report_en = body_clean + refs_section
+                    print(f"📑 Citation Standardization: converted [REF-XXX] → [N] academic format, {len(registry)} registry sources.")
+                else:
+                    master_report_en = body_clean
+            except Exception as _cite_err:
+                print(f"⚠️ Citation standardization failed: {_cite_err}. Keeping raw [REF-XXX] tags.")
 
             # 3. Save English Artifact
             saved_path_en = save_artifact("Project_Master_Report_EN", master_report_en, "md", thread_id=thread_id)
