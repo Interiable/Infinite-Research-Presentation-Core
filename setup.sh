@@ -52,8 +52,8 @@ fi
 
 # Read model names from .env
 if [ -f backend/.env ]; then
-  ENV_LOCAL_MODEL=$(grep -E "^LOCAL_LLM_MODEL=" backend/.env | cut -d'=' -f2 | tr -d ' "#\'\r')
-  ENV_SCIENCE_MODEL=$(grep -E "^LOCAL_SCIENCE_MODEL=" backend/.env | cut -d'=' -f2 | tr -d ' "#\'\r')
+  ENV_LOCAL_MODEL=$(grep -E "^LOCAL_LLM_MODEL=" backend/.env | cut -d'=' -f2 | cut -d'#' -f1 | tr -d ' "\'\r')
+  ENV_SCIENCE_MODEL=$(grep -E "^LOCAL_SCIENCE_MODEL=" backend/.env | cut -d'=' -f2 | cut -d'#' -f1 | tr -d ' "\'\r')
 fi
 LOCAL_MODEL="${ENV_LOCAL_MODEL:-"qwen3.6:27b"}"
 SCIENCE_MODEL="${ENV_SCIENCE_MODEL:-"gemma4:31b"}"
