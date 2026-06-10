@@ -21,7 +21,15 @@ def run_system():
         sys.exit(1)
 
     backend_process = subprocess.Popen(
-        [venv_python, "-m", "uvicorn", "app.main:app", "--port", "8000"],
+        [
+            venv_python, "-m", "uvicorn", "app.main:app", "--port", "8000",
+            # WebSocket keepalive tolerance: heavy local-LLM phases (Deep Research
+            # synthesis) can block the event loop for a while. Without a generous
+            # ping timeout, uvicorn drops the WS connection mid-research.
+            "--ws-ping-interval", "30",      # send a ping every 30s
+            "--ws-ping-timeout", "600",      # tolerate up to 10 min before closing
+            "--timeout-keep-alive", "75",    # HTTP keep-alive tolerance
+        ],
         cwd=os.path.join(os.getcwd(), "backend"),
         env=backend_env,
         preexec_fn=os.setsid # Create new process group
