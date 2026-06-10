@@ -1511,12 +1511,37 @@ The current task is STRICTLY limited to: "{current_step_desc}"
         else:
             chapter_context = raw_chapter_context[:30000]
         
-        # v12.0: Inject Web Search Library data (available regardless of local files)
-        if local_web_context and "WEB SEARCH LIBRARY" not in chapter_context:
-            safe_web = local_web_context[:15000] if len(local_web_context) > 15000 else local_web_context
-            chapter_context += f"\n\n**🌐 PREVIOUSLY FOUND WEB RESEARCH (From Web Search Library DB):**\n{safe_web}\n"
-            print(f"   🌐 Web Search Library context injected ({len(safe_web)} chars).")
-        
+        # v13.2: Per-chapter RAG re-search — use the CHAPTER TITLE (not just the
+        # sub-step topic) so each chapter pulls context relevant to its own focus.
+        # Falls back to the sub-step-level local_web_context if the chapter search is empty.
+        chapter_query = f"{title} {topic}".strip()
+        chapter_web_context = ""
+        try:
+            from app.core.rag import WebSearchLibrary
+            _web_lib = WebSearchLibrary(project_id=project_id)
+            chapter_web_context = _web_lib.search(chapter_query, k=15)
+        except Exception as _e:
+            print(f"   ⚠️ Per-chapter web re-search skipped: {_e}")
+
+        effective_web_context = chapter_web_context or local_web_context
+        if effective_web_context and "WEB SEARCH LIBRARY" not in chapter_context:
+            safe_web = effective_web_context[:15000]
+            chapter_context += f"\n\n**🌐 WEB RESEARCH (Chapter-Relevant, from Web Search Library DB):**\n{safe_web}\n"
+            src = "chapter-title" if chapter_web_context else "sub-step fallback"
+            print(f"   🌐 Web context injected ({len(safe_web)} chars, via {src}).")
+
+        # v13.2: Per-chapter paper RAG re-search by chapter title
+        try:
+            from app.core.rag import PaperLibrary
+            _paper_lib = PaperLibrary(project_id=project_id)
+            chapter_paper_context, _ = _paper_lib.search_papers_with_sources(chapter_query, k=15)
+            if chapter_paper_context and "CHAPTER-RELEVANT PAPERS" not in chapter_context:
+                safe_paper = chapter_paper_context[:15000]
+                chapter_context += f"\n\n**📚 CHAPTER-RELEVANT PAPERS (from Paper Library DB):**\n{safe_paper}\n"
+                print(f"   📚 Chapter paper context injected ({len(safe_paper)} chars).")
+        except Exception as _e:
+            print(f"   ⚠️ Per-chapter paper re-search skipped: {_e}")
+
         # Add global instructions
         chapter_context += f"\n\n**Global Context / Instructions:**\n{context_prompt}\n"
         
