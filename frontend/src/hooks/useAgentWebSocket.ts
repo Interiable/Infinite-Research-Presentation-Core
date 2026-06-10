@@ -36,9 +36,11 @@ export function useAgentWebSocket(url: string, threadId: string) {
     const [currentSlideCode, setCurrentSlideCode] = useState<string | null>(null);
     const [progress, setProgress] = useState<ProgressData | null>(null);
     const [isConnected, setIsConnected] = useState(false);
-    const [reconnectCount, setReconnectCount] = useState(0);
+
     const reconnectTimerRef = useRef<any>(null);
-    const historyLoadedRef = useRef<string>(''); // Track which threadId's history was loaded
+    const pingIntervalRef = useRef<any>(null);
+    const intentionalCloseRef = useRef(false);   // true = we closed on purpose (cleanup)
+    const historyLoadedRef = useRef<string>('');
 
     // Load dialogue history from backend on thread change
     useEffect(() => {
@@ -64,78 +66,104 @@ export function useAgentWebSocket(url: string, threadId: string) {
         loadHistory();
     }, [threadId]);
 
-    const connect = () => {
+    useEffect(() => {
         if (!threadId) return;
 
-        const wsUrl = `${url}/${threadId}`;
-        console.log(`Connecting to session: ${threadId} (Attempt: ${reconnectCount + 1})`);
+        intentionalCloseRef.current = false;
 
-        ws.current = new WebSocket(wsUrl);
-
-        ws.current.onopen = () => {
-            console.log('Connected to Agent Stream');
-            setIsConnected(true);
-            setReconnectCount(0); // Reset on success
-            if (reconnectTimerRef.current) {
-                clearTimeout(reconnectTimerRef.current);
-                reconnectTimerRef.current = null;
+        const connect = () => {
+            // Guard: don't open a second socket if one is already open/connecting
+            if (ws.current &&
+                (ws.current.readyState === WebSocket.OPEN ||
+                 ws.current.readyState === WebSocket.CONNECTING)) {
+                return;
             }
-            setLogs((prev) => [...prev, `[System] Connected to Session: ${threadId}`]);
-        };
 
-        ws.current.onmessage = (event) => {
-            try {
-                const data: WebSocketMessage = JSON.parse(event.data);
+            const wsUrl = `${url}/${threadId}`;
+            console.log(`Connecting to session: ${threadId}`);
+            const socket = new WebSocket(wsUrl);
+            ws.current = socket;
 
-                if (data.type === 'log') {
-                    setLogs((prev) => [...prev, `[Agent] ${data.content}`]);
-                } else if (data.type === 'slide_update') {
-                    setLogs((prev) => [...prev, '[System] Hot-Reloading Slide...']);
-                    setCurrentSlideCode(data.code);
-                } else if (data.type === 'agent_message') {
-                    // Append to dialogue (deduplicate if same content just loaded from history)
-                    setDialogue((prev) => [...prev, data]);
-                    // Also log it for transparency
-                    setLogs((prev) => [...prev, `[${data.sender}] ${data.content.substring(0, 50)}...`]);
-                } else if (data.type === 'progress') {
-                    setProgress(data as ProgressData);
-                }
-            } catch (err) {
-                console.error('Failed to parse WS message', err);
-            }
-        };
-
-        ws.current.onclose = () => {
-            setIsConnected(false);
-            setLogs((prev) => [...prev, '[System] Disconnected. Reconnecting in 3s...']);
-
-            // Auto-reconnect after 3 seconds
-            if (!reconnectTimerRef.current) {
-                reconnectTimerRef.current = setTimeout(() => {
+            socket.onopen = () => {
+                console.log('Connected to Agent Stream');
+                setIsConnected(true);
+                if (reconnectTimerRef.current) {
+                    clearTimeout(reconnectTimerRef.current);
                     reconnectTimerRef.current = null;
-                    setReconnectCount(prev => prev + 1);
-                }, 3000);
-            }
-        };
-    };
+                }
+                setLogs((prev) => [...prev, `[System] Connected to Session: ${threadId}`]);
+            };
 
-    useEffect(() => {
+            socket.onmessage = (event) => {
+                try {
+                    const data: WebSocketMessage = JSON.parse(event.data);
+
+                    if (data.type === 'log') {
+                        setLogs((prev) => [...prev, `[Agent] ${data.content}`]);
+                    } else if (data.type === 'slide_update') {
+                        setLogs((prev) => [...prev, '[System] Hot-Reloading Slide...']);
+                        setCurrentSlideCode(data.code);
+                    } else if (data.type === 'agent_message') {
+                        setDialogue((prev) => [...prev, data]);
+                        setLogs((prev) => [...prev, `[${data.sender}] ${data.content.substring(0, 50)}...`]);
+                    } else if (data.type === 'progress') {
+                        setProgress(data as ProgressData);
+                    }
+                    // 'pong' messages are ignored (keep-alive ack)
+                } catch (err) {
+                    console.error('Failed to parse WS message', err);
+                }
+            };
+
+            socket.onclose = () => {
+                setIsConnected(false);
+
+                // If WE closed it (thread switch / unmount), do NOT reconnect.
+                if (intentionalCloseRef.current) {
+                    return;
+                }
+
+                setLogs((prev) => [...prev, '[System] Disconnected. Reconnecting in 3s...']);
+
+                // Schedule a single reconnect attempt (idempotent)
+                if (!reconnectTimerRef.current) {
+                    reconnectTimerRef.current = setTimeout(() => {
+                        reconnectTimerRef.current = null;
+                        connect();   // direct reconnect — does NOT re-run the effect
+                    }, 3000);
+                }
+            };
+
+            socket.onerror = () => {
+                // Let onclose handle the reconnect; just close cleanly.
+                try { socket.close(); } catch { /* noop */ }
+            };
+        };
+
         connect();
 
         // --- Keep-Alive Ping Interval (20s) ---
-        const pingInterval = setInterval(() => {
+        pingIntervalRef.current = setInterval(() => {
             if (ws.current && ws.current.readyState === WebSocket.OPEN) {
-                // Send silent ping
                 ws.current.send(JSON.stringify({ type: 'ping', content: 'keep-alive' }));
             }
         }, 20000);
 
+        // Cleanup: only runs on thread change or unmount (NOT on reconnect)
         return () => {
-            clearInterval(pingInterval);
-            if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current);
-            ws.current?.close();
+            intentionalCloseRef.current = true;
+            if (pingIntervalRef.current) clearInterval(pingIntervalRef.current);
+            if (reconnectTimerRef.current) {
+                clearTimeout(reconnectTimerRef.current);
+                reconnectTimerRef.current = null;
+            }
+            if (ws.current) {
+                ws.current.onclose = null;  // prevent reconnect from firing on intentional close
+                ws.current.close();
+                ws.current = null;
+            }
         };
-    }, [url, threadId, reconnectCount]);
+    }, [url, threadId]);   // ← reconnectCount removed: connection no longer tears down on reconnect
 
     const sendMessage = (text: string, searchOptions?: any, projectId?: string) => {
         if (!ws.current || ws.current.readyState !== WebSocket.OPEN) return;
@@ -148,13 +176,13 @@ export function useAgentWebSocket(url: string, threadId: string) {
         if (projectId) {
             payload.project_id = projectId;
         }
-        
+
         ws.current.send(JSON.stringify(payload));
         setLogs((prev) => [...prev, `[User] ${text}`]);
     };
 
     const sendCommand = (command: string) => {
-        if (ws.current && isConnected) {
+        if (ws.current && ws.current.readyState === WebSocket.OPEN) {
             const payload = JSON.stringify({ type: 'command', content: command });
             ws.current.send(payload);
             setLogs((prev) => [...prev, `[Command] Executing: ${command.toUpperCase()}`]);
