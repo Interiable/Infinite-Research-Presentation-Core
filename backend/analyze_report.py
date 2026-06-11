@@ -1,58 +1,50 @@
 import re
+import random
 import os
-import urllib.request
-from collections import defaultdict
 
-artifact_dir = "/home/hgeon/gravity/LangAIAgent/backend/artifacts/9e0ioe"
-report_path = "/home/hgeon/gravity/LangAIAgent/backend/results/9e0ioe/00_Project_Recursive_Master_Report.md"
+report_path = "/home/hgeon/gravity/LangAIAgent/backend/results/socnum/00_Project_Recursive_Master_Report.md"
 
-# 1. Iteration Analysis
-files = os.listdir(artifact_dir)
-chapter_versions = defaultdict(list)
-for f in files:
-    match = re.search(r'step(\d+)_sub(\d+)_ch(\d+)_v(\d+)\.md', f)
-    if match:
-        step, sub, ch, v = match.groups()
-        key = f"Step {step}.{sub} Ch {ch}"
-        chapter_versions[key].append(int(v))
+with open(report_path, "r") as f:
+    lines = f.readlines()
 
-iteration_counts = [max(v) for v in chapter_versions.values()]
-if iteration_counts:
-    avg_iterations = sum(iteration_counts) / len(iteration_counts)
-    max_iter = max(iteration_counts)
-else:
-    avg_iterations = 0
-    max_iter = 0
+claims = []
+references = {}
 
-print(f"Total Chapters Written: {len(chapter_versions)}")
-print(f"Average Iterations per Chapter: {avg_iterations:.2f}")
-print(f"Max Iterations for a single chapter: {max_iter}")
-print(f"Total Artifacts generated: {len(files)}")
+current_chapter = ""
+for p_idx, line in enumerate(lines):
+    if line.startswith("# "):
+        current_chapter = line.strip()
+    
+    # Check for Reference section
+    ref_match = re.search(r'- \[REF-(\d+)\] (.*)', line)
+    if ref_match:
+        ref_id = f"REF-{ref_match.group(1)}"
+        references[ref_id] = ref_match.group(2)
+        continue
+        
+    # Check for claims
+    matches = re.findall(r'\[REF-\d+\]', line)
+    if matches and len(line) > 50 and not line.strip().startswith("- [REF-"):
+        for m in set(matches):
+            claims.append({
+                "chapter": current_chapter,
+                "claim": line.strip(),
+                "ref_id": m.replace("[", "").replace("]", ""),
+                "line_num": p_idx + 1
+            })
 
-# 2. Extract Links and Check Fakes
-with open(report_path, 'r', encoding='utf-8') as f:
-    content = f.read()
+print(f"Total lines: {len(lines)}")
+print(f"Total Unique References found: {len(references.keys())}")
+print(f"Total Claims found: {len(claims)}")
 
-urls = re.findall(r'https?://[^\s\]\>]+', content)
-unique_urls = set(urls)
-print(f"\nFound {len(unique_urls)} unique URLs.")
-dummy_patterns = ['example.com', 'yourdomain', 'placeholder', 'test.com', 'foo.bar']
-fake_urls = [u for u in unique_urls if any(d in u for d in dummy_patterns)]
-if fake_urls:
-    print(f"⚠️ POTENTIAL FAKE URLS: {fake_urls}")
-else:
-    print(f"✅ No obvious dummy domains found among {len(unique_urls)} links.")
+random.seed(42) # For reproducibility
+sampled_claims = random.sample(claims, min(10, len(claims)))
 
-# 3. Check Sub-steps completeness
-sections = re.findall(r'^## 📍 (Step \d+\.\d+.*)', content, re.MULTILINE)
-print(f"\nSub-steps found in Master Report: {len(sections)}")
-for s in sections:
-    print(f" - {s}")
-
-# 4. Check for YouTube Transcripts
-# Searching for standard YouTube links
-yt_links = [u for u in unique_urls if 'youtube.com/watch' in u or 'youtu.be/' in u]
-print(f"\nFound {len(yt_links)} YouTube Links.")
-no_transcripts = content.count("No transcript available")
-print(f"Instances of 'No transcript available': {no_transcripts}")
+for i, c in enumerate(sampled_claims):
+    ref_id = c['ref_id']
+    paper_title = references.get(ref_id, "UNKNOWN PAPER")
+    print(f"\n--- sample {i+1} ---")
+    print(f"Ref ID: {ref_id}")
+    print(f"Paper: {paper_title}")
+    print(f"Claim: {c['claim'][:500]}...")
 
