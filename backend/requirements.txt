@@ -34,6 +34,7 @@ langchain-chroma>=0.1.4
 
 # --- PDF Generation ---
 playwright>=1.48.0                  # HTML→PDF via Chromium
+markdown>=3.5                       # MD→HTML (tables/fenced_code/sane_lists) — pin for cross-PC consistency
 markdown-pdf>=1.5                   # MD→PDF utility
 nest-asyncio>=1.6.0                 # Required: Playwright in async FastAPI context
 # After pip install: run `python3 -m playwright install chromium`

@@ -294,6 +294,63 @@ class DeepResearcher:
 
 
 # PDF Conversion Utility
+def _normalize_markdown_spacing(text: str) -> str:
+    """
+    Normalizes LLM-generated Markdown so the Python `markdown` parser reliably
+    renders tables, code blocks, headers and lists — even when the LLM omitted
+    the blank lines the strict parser requires.
+
+    Critically, it NEVER modifies content INSIDE fenced code blocks (```), so
+    ASCII diagrams that use | and +--+ are kept as preformatted text instead of
+    being misparsed as broken tables (the "dotted line" symptom).
+    """
+    lines = text.split('\n')
+    out = []
+    in_fence = False
+
+    def _prev_nonempty():
+        return out[-1].strip() if out else ''
+
+    for line in lines:
+        stripped = line.lstrip()
+        is_fence = stripped.startswith('```') or stripped.startswith('~~~')
+
+        if is_fence:
+            # Blank line before an OPENING fence so it's recognized as a code block
+            if not in_fence and out and _prev_nonempty() != '':
+                out.append('')
+            out.append(line)
+            in_fence = not in_fence
+            if not in_fence:
+                # Just CLOSED a fence → ensure a trailing blank line
+                out.append('')
+            continue
+
+        if in_fence:
+            out.append(line)          # never touch code-block interior
+            continue
+
+        is_table = stripped.startswith('|')
+        is_header = stripped.startswith('#')
+        prev = _prev_nonempty()
+        prev_is_table = out and out[-1].lstrip().startswith('|')
+
+        # Blank line before a table that follows ordinary text (not another table row)
+        if is_table and prev != '' and not prev_is_table:
+            out.append('')
+        # Blank line before a header that follows text
+        if is_header and prev != '':
+            out.append('')
+
+        out.append(line)
+
+        # Blank line AFTER a header so the next block parses independently
+        if is_header:
+            out.append('')
+
+    return '\n'.join(out)
+
+
 def convert_to_pdf(markdown_path: str, output_pdf_path: str = None):
     """
     Converts a Markdown file to a PDF file using playwright and custom CSS.
@@ -329,7 +386,15 @@ def convert_to_pdf(markdown_path: str, output_pdf_path: str = None):
             text
         )
 
-        html_content = markdown.markdown(text, extensions=['tables', 'fenced_code'])
+        # Normalize spacing so tables / code / headers parse reliably across
+        # machines (independent of LLM output quirks). Applied AFTER math
+        # pre-processing so it doesn't touch the injected math HTML.
+        text = _normalize_markdown_spacing(text)
+
+        html_content = markdown.markdown(
+            text,
+            extensions=['tables', 'fenced_code', 'sane_lists'],
+        )
 
         html_doc = f"""
 <!DOCTYPE html>
@@ -344,9 +409,12 @@ h2 {{ color: #1a1a1a; border-bottom: 1px solid #dddddd; padding-bottom: 0.3em; m
 h3 {{ color: #333333; margin-top: 24px; margin-bottom: 12px; }}
 h4, h5, h6 {{ color: #444444; }}
 p, li {{ color: #222222; }}
-pre {{ background-color: #f7f7f7 !important; padding: 16px; border-radius: 6px; border: 1px solid #e0e0e0; overflow: auto; white-space: pre-wrap; word-wrap: break-word; }}
+/* Code blocks: preserve EXACT spacing so ASCII diagrams (+---+ | boxes) keep
+   their alignment. pre-wrap was breaking wide diagram lines into dotted
+   fragments. Smaller monospace font lets typical diagrams fit A4 width. */
+pre {{ background-color: #f7f7f7 !important; padding: 14px; border-radius: 6px; border: 1px solid #e0e0e0; overflow-x: hidden; white-space: pre; font-size: 10px; line-height: 1.35; }}
 code {{ font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace; background-color: #f0f0f0 !important; color: #333333; padding: 0.15em 0.35em; border-radius: 4px; font-size: 85%; white-space: pre-wrap; word-wrap: break-word; }}
-pre code {{ background-color: transparent !important; padding: 0; white-space: pre-wrap; word-wrap: break-word; }}
+pre code {{ background-color: transparent !important; padding: 0; white-space: pre; font-size: inherit; word-wrap: normal; }}
 table {{ border-collapse: collapse; width: 100%; margin-top: 15px; margin-bottom: 15px; table-layout: fixed; word-wrap: break-word; font-size: 11px; background-color: #ffffff !important; }}
 th, td {{ border: 1px solid #cccccc; padding: 8px; word-break: keep-all; word-wrap: break-word; overflow-wrap: break-word; color: #222222; background-color: #ffffff !important; }}
 th {{ background-color: #f5f5f5 !important; font-weight: 600; color: #111111; }}
