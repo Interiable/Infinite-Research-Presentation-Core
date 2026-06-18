@@ -1625,6 +1625,13 @@ Be focused and dense. Avoid padding or unnecessary repetition.
 - **AUDIENCE ADAPTATION**: Match your writing style to what the Supervisor and task require. Do NOT default to engineering-heavy writing if the task is UX/business focused.
 - **NO HALLUCINATIONS**: Do not invent sensors, statistics, or data not found in the source documentation.
 - **DENSE AND ACTIONABLE**: Keep content focused and substantive. Avoid filler prose.
+- **🚫 NO ASCII ART (CRITICAL FORMATTING)**: NEVER draw tables, boxes, or diagrams using
+  ASCII characters like `+----+`, `|`, `---`, or `<--->`. These render as broken dotted
+  lines in the final PDF. Instead:
+    • Tabular / comparison data → use a proper **Markdown table** (`| Col A | Col B |` with a `|---|---|` separator row).
+    • Architecture / flow / relationships → describe in **prose or a bulleted/numbered list**
+      (e.g. "The BRAIN layer feeds the BODY layer, which returns sensor data via a feedback loop").
+  Do NOT wrap tabular data in ``` code fences. Code fences are ONLY for actual code/formulas.
 - **APPROVED CONTEXT**: Ensure continuity with previously approved chapters without repeating them.
 - **🚫🚫🚫 NO INTERNAL CITE TAGS (ZERO TOLERANCE) 🚫🚫🚫**: NEVER include `[Pre-Digested Facts]`, `[Scientific Notes]`, or `[GEMMA4]`, `[DEEPSEEK-R1]` in your output. Use [REF-XXX] tags from the registry.
 - **🚫🚫🚫 NO FREE-FORM CITATIONS (ZERO TOLERANCE) 🚫🚫🚫**: NEVER write `[File: ...]`, `[Web: ...]`, `[Paper: ...]`, or `[Patent: ...]`. ALL of these formats are BANNED. Use ONLY `[REF-XXX]` IDs from the VERIFIED REFERENCE REGISTRY above. Any free-form citation will be AUTOMATICALLY STRIPPED.

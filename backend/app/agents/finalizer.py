@@ -30,7 +30,10 @@ Your task is to produce a beautiful, elegant, and definitive final deliverable f
      * **Markdown Tables** (| header | header |...) — copy entire tables verbatim.
      * **Code Blocks** (```...```) — preserve all code, formulas, and pseudocode exactly.
      * **Mathematical Formulas** (LaTeX, equations) — preserve exactly as written.
-     * **Architecture Diagrams** (ASCII art, Mermaid, structured specs) — preserve exactly.
+   - **🚫 ASCII-ART TABLES/DIAGRAMS**: If the source contains a table or diagram drawn with
+     ASCII characters (`+----+`, `|`, `---`, `<--->`), do NOT preserve it as-is — it renders
+     as broken dotted lines in the PDF. CONVERT it: tabular data → a proper Markdown table;
+     a flow/architecture diagram → a concise prose or bulleted description of the same relationships.
    - The `[KEY ARTIFACTS]` section provided contains these original artifacts extracted from the research. You MUST include them in your output in their original form.
    - You may add brief contextual introductions or strategic commentary AROUND the artifacts, but NEVER modify their content.
 3. **Beautiful Presentation**: 
